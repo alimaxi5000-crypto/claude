@@ -1,0 +1,26 @@
+# Unreal Engine - generierte Ordner
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.idea/
+
+# Visual Studio / Rider
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+
+# Kompilierte Dateien
+*.pdb
+*.dll
+*.exe
+*.lib
+*.obj
+
+# Backups vom Setup-Skript
+*.uproject.bak
