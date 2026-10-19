@@ -91,8 +91,8 @@ const da = {
       root: { p: [0, 0.34 * drop, z], bend: 0.35 * slump },
       leg: {
         // Kneeling: the feet stay where they are and roll onto the toes, the knees drop forward.
-        L: { target: [-0.15, 0.06, GROUND + ANKLE_H], foot: { yaw: 10 * DEG, pitch: -55 * DEG * drop }, pivot: { kind: 'toe', x: -0.15 + 0.025, y: 0.06 + 0.15 }, pole: [0, 1, 0.2] },
-        R: { target: [0.14, -0.1, GROUND + ANKLE_H], foot: { yaw: -16 * DEG, pitch: -55 * DEG * drop }, pivot: { kind: 'toe', x: 0.14 - 0.04, y: -0.1 + 0.145 }, pole: [0, 1, 0.2] },
+        L: { target: [-0.15, 0.06, GROUND + ANKLE_H], foot: { yaw: 10 * DEG, pitch: -55 * DEG * drop }, pivot: { kind: 'toe', ax: -0.15, ay: 0.06 }, pole: [0, 1, 0.2] },
+        R: { target: [0.14, -0.1, GROUND + ANKLE_H], foot: { yaw: -16 * DEG, pitch: -55 * DEG * drop }, pivot: { kind: 'toe', ax: 0.14, ay: -0.1 }, pole: [0, 1, 0.2] },
       },
       arm: {
         L: { target: [-0.12, 0.1 + 0.15 * slump, -0.5 + 0.1 * drop], space: 'shoulder', pole: [-0.4, -1, 0], fingers: LIMP },
@@ -118,8 +118,8 @@ const db = {
       root: { p: [0, -0.5 * sit, z], bend: -0.45 * fall },
       leg: {
         // Feet stay planted, the hips drop behind them; heels pivot as the knees come up.
-        L: { target: [-0.16, 0.06, GROUND + ANKLE_H], foot: { yaw: 12 * DEG, pitch: 12 * DEG * sit }, pivot: { kind: 'heel', x: -0.16 - 0.01, y: 0.06 - 0.05 }, pole: [-0.2, 1, 0.3] },
-        R: { target: [0.17, -0.08, GROUND + ANKLE_H], foot: { yaw: -14 * DEG, pitch: 16 * DEG * sit }, pivot: { kind: 'heel', x: 0.17 + 0.012, y: -0.08 - 0.048 }, pole: [0.2, 1, 0.3] },
+        L: { target: [-0.16, 0.06, GROUND + ANKLE_H], foot: { yaw: 12 * DEG, pitch: 12 * DEG * sit }, pivot: { kind: 'heel', ax: -0.16, ay: 0.06 }, pole: [-0.2, 1, 0.3] },
+        R: { target: [0.17, -0.08, GROUND + ANKLE_H], foot: { yaw: -14 * DEG, pitch: 16 * DEG * sit }, pivot: { kind: 'heel', ax: 0.17, ay: -0.08 }, pole: [0.2, 1, 0.3] },
       },
       arm: {
         L: { target: [-0.3, 0.05 - 0.2 * sit, -0.1 + 0.2 * fall], space: 'shoulder', pole: [-0.6, -0.6, -0.3], fingers: CLAW },

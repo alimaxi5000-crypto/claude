@@ -24,6 +24,7 @@ class Ctx {
   // The offset is expressed in the REST MODEL frame (portable across skeletons) and rotated
   // by the bone's pose delta.
   at(actor, bone, offset = [0, 0, 0]) {
+    this.used = true;
     const sol = this.prev?.[actor];
     const skel = this.scene.skeletons[actor];
     const i = skel.idx(bone);
@@ -36,6 +37,7 @@ class Ctx {
   }
   // Mover (entity) position of an actor from the previous pass.
   moverOf(actor) {
+    this.used = true;
     return this.prev?.[actor]?.mover ?? { p: [0, 0, 0], q: [0, 0, 0, 1] };
   }
   // Point given in an actor's body (entity) frame -> scene space.
@@ -92,7 +94,8 @@ export function sampleScene(source, variant, skeletons) {
         sols[a] = sol;
       }
       prev = sols;
-      if (!source.contacts && actors.length === 1) break; // single actor: one pass is enough
+      // A single actor that never reads posed bones (ctx.at) is solved exactly in one pass.
+      if (!source.contacts && actors.length === 1 && !ctx.used) break;
     }
     for (const a of actors) frames[a].push(sols[a]);
   }

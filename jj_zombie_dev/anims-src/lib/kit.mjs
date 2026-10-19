@@ -45,13 +45,17 @@ export function ankleFromPivot(kind, px, py, yaw, pitch) {
 
 // A foot plant: { t0, t1, x, y, yaw } = the foot rests flat at (x, y) with heading yaw (scene)
 // from t0 to t1. Between plants the foot swings on an arc. Heel strike / toe-off roll is added
-// around the plant boundaries. Returns a function t -> leg spec for the rig.
+// around the plant boundaries. Optional pivot turn while planted: { turnTo, ts, te } rotates the
+// foot to heading turnTo between ts and te on the ball of the foot (heel slightly raised).
+// Planted phases and swings are emitted as anchor pivots / swing specs that the rig resolves
+// with each skeleton's real foot geometry. Returns a function t -> leg spec for the rig.
 export function plantedFoot(plants, opts = {}) {
   const lift = opts.lift ?? 0.09;
   const roll = opts.roll ?? 1.0;              // 0 = no heel/toe roll
   const HEEL = 14 * DEG * roll, PUSH = 30 * DEG * roll;
   const HEEL_T = 0.12, PUSH_T = 0.14;
   const ps = plants.slice().sort((a, b) => a.t0 - b.t0);
+  const yawEnd = (p) => (p.turnTo ?? p.yaw ?? 0);
   return (t) => {
     // First plant that has not ended yet; before its start we are swinging towards it.
     let j = 0;
@@ -60,35 +64,48 @@ export function plantedFoot(plants, opts = {}) {
     const i = swinging ? j - 1 : j;
     const a = ps[i];
     const yawA = a.yaw ?? 0;
-    const [fx, fy] = rot2(0, 1, yawA);
+    const turned = a.turnTo != null;
     if (!swinging) {
       // Planted: flat, with heel strike after arriving and toe-off before leaving.
       const sinceStrike = t - a.t0;
       const untilLift = a.t1 - t;
+      const ground = [a.x, a.y, GROUND + ANKLE_H];
       if (roll && i > 0 && sinceStrike >= 0 && sinceStrike < HEEL_T) {
         const pitch = HEEL * (1 - Ease.out(sinceStrike / HEEL_T));
-        return { target: [a.x, a.y, GROUND + ANKLE_H], foot: { yaw: yawA, pitch }, toe: 0, pivot: { kind: 'heel', x: a.x - fx * 0.05, y: a.y - fy * 0.05 } };
+        return { target: ground, foot: { yaw: yawA, pitch }, toe: 0, pivot: { kind: 'heel', ax: a.x, ay: a.y } };
       }
       if (roll && i < ps.length - 1 && untilLift >= 0 && untilLift < PUSH_T) {
         const u = 1 - untilLift / PUSH_T;
         const pitch = -PUSH * Ease.in(u);
-        return { target: [a.x, a.y, GROUND + ANKLE_H], foot: { yaw: yawA, pitch }, toe: PUSH * Ease.in(u), pivot: { kind: 'toe', x: a.x + fx * TOE_FWD, y: a.y + fy * TOE_FWD } };
+        return { target: ground, foot: { yaw: yawEnd(a), pitch }, toe: PUSH * Ease.in(u), pivot: { kind: 'toe', ax: a.x, ay: a.y, ayaw: yawA } };
       }
-      return { target: [a.x, a.y, GROUND + ANKLE_H], foot: { yaw: yawA, pitch: 0 }, toe: 0 };
+      if (turned) {
+        const u = clamp((t - a.ts) / Math.max(1e-6, a.te - a.ts), 0, 1);
+        const yaw = lerp(yawA, a.turnTo, Ease.inOut(u));
+        const pitch = -(a.heelUp ?? 12) * DEG * Math.sin(Math.PI * u);
+        return { target: ground, foot: { yaw, pitch }, toe: -pitch, pivot: { kind: 'toe', ax: a.x, ay: a.y, ayaw: yawA } };
+      }
+      return { target: ground, foot: { yaw: yawA, pitch: 0 }, toe: 0 };
     }
     // Swing from the toe-off pose of plant a to the heel-strike pose of plant b.
     const b = ps[i + 1];
     const yawB = b.yaw ?? 0;
+    const yawA1 = yawEnd(a);
+    const [fx, fy] = rot2(0, 1, yawA);
     const [gx, gy] = rot2(0, 1, yawB);
     const u = clamp((t - a.t1) / Math.max(1e-6, b.t0 - a.t1), 0, 1);
-    const A0 = roll ? ankleFromPivot('toe', a.x + fx * TOE_FWD, a.y + fy * TOE_FWD, yawA, -PUSH) : [a.x, a.y, GROUND + ANKLE_H];
+    // Approximate (reference foot) path; the rig recomputes it exactly from `swing`.
+    const toeX = a.x + fx * TOE_FWD, toeY = a.y + fy * TOE_FWD;
+    const A0 = roll ? ankleFromPivot('toe', toeX, toeY, yawA1, -PUSH) : [a.x, a.y, GROUND + ANKLE_H];
     const A1 = roll ? ankleFromPivot('heel', b.x - gx * 0.05, b.y - gy * 0.05, yawB, HEEL) : [b.x, b.y, GROUND + ANKLE_H];
     const hor = Ease.inOut(clamp((u - 0.12) / 0.74, 0, 1));
-    const yaw = lerp(yawA, yawB, hor);
-    const z = lerp(A0[2], A1[2], smooth(u)) + Math.sin(Math.PI * u) * lift * (opts.liftCurve ? opts.liftCurve(u) : 1);
+    const yaw = lerp(yawA1, yawB, hor);
+    const zBase = lerp(A0[2], A1[2], smooth(u));
+    const h = Math.sin(Math.PI * u) * lift * (opts.liftCurve ? opts.liftCurve(u) : 1);
     const pitch = -PUSH * (1 - Ease.out(clamp(u / 0.45, 0, 1))) + HEEL * Ease.in(clamp((u - 0.55) / 0.45, 0, 1));
     const toe = PUSH * (1 - Ease.out(clamp(u * 3, 0, 1)));
-    return { target: [lerp(A0[0], A1[0], hor), lerp(A0[1], A1[1], hor), z], foot: { yaw, pitch }, toe };
+    const swing = roll ? { a: { x: a.x, y: a.y, foot: { yaw: yawA1 }, ayaw: yawA, pitch: -PUSH }, b: { x: b.x, y: b.y, foot: { yaw: yawB }, pitch: HEEL }, h: hor, v: smooth(u), lift: h } : undefined;
+    return { target: [lerp(A0[0], A1[0], hor), lerp(A0[1], A1[1], hor), zBase + h], foot: { yaw, pitch }, toe, swing };
   };
 }
 
@@ -125,12 +142,12 @@ export function gait(cfg) {
         out.target = [x, plantY + shift, GROUND + ANKLE_H];
         if (u < 0.15) {
           out.foot.pitch = HEEL * (1 - Ease.out(u / 0.15));
-          out.pivot = { kind: 'heel', x: x - fx * 0.05, y: plantY - fy * 0.05 + shift };
+          out.pivot = { kind: 'heel', ax: x, ay: plantY + shift };
         } else if (u > 0.82) {
           const w = (u - 0.82) / 0.18;
           out.foot.pitch = -PUSH * Ease.in(w);
           out.toe = PUSH * Ease.in(w);
-          out.pivot = { kind: 'toe', x: x + fx * TOE_FWD, y: plantY + fy * TOE_FWD + shift };
+          out.pivot = { kind: 'toe', ax: x, ay: plantY + shift };
         }
         return out;
       }
@@ -142,6 +159,8 @@ export function gait(cfg) {
       const hor = Ease.inOut(clamp((u - 0.15) / 0.7, 0, 1));
       const h = Math.sin(Math.PI * u) ** (o.liftPow ?? 1) * (o.lift ?? 0.1);
       out.target = [lerp(A0[0], A1[0], hor), lerp(A0[1], A1[1], hor) + shift, lerp(A0[2], A1[2], smooth(u)) + h];
+      const fr = { yawRel: out.foot.yawRel };
+      out.swing = { a: { x, y: plantY + shift, foot: fr, pitch: -PUSH }, b: { x, y: nextY + shift, foot: fr, pitch: HEEL }, h: hor, v: smooth(u), lift: h };
       out.foot.pitch = -PUSH * (1 - Ease.out(clamp(u / 0.45, 0, 1))) + HEEL * Ease.in(clamp((u - 0.55) / 0.45, 0, 1))
         - (o.dragToe ? o.dragToe * DEG * Math.sin(Math.PI * u) : 0);
       out.toe = PUSH * (1 - Ease.out(clamp(u * 3, 0, 1)));
@@ -212,30 +231,82 @@ export function addRot(...rs) {
 export { vnorm, vadd, vsub, vscale, vcross };
 
 // ---------------------------------------------------------------- pose blending
-// Blend two pose specs (numbers/arrays lerp, nested objects recurse). Arm specs whose targets
-// live in different spaces are cross-faded through the rig's `blend` field (no popping).
+// Blend two pose specs continuously for every w in [0, 1]:
+//   numbers/arrays lerp; a control present on one side only blends towards its neutral value
+//   (0, palm/look weight 0, reach 0.995); arm targets in different spaces become weighted
+//   `terms` that the rig sums after resolving each space (no popping at any weight).
+const NEUTRAL = { reach: 0.995 };
+const KEEP = new Set(['pole', 'poleSpace', 'fk']);     // no neutral value: keep the defined one
 export function mixPose(a, b, w) {
   if (!a || w >= 1) return b;
   if (!b || w <= 0) return a;
-  return mixVal(a, b, w);
+  return mixVal(a, b, w, '');
 }
-function mixVal(a, b, w) {
-  if (a === undefined) return b;
-  if (b === undefined) return a;
+function termsOf(spec) {
+  let terms;
+  if (spec.terms) terms = spec.terms.map((t) => ({ ...t }));
+  else terms = [{ target: spec.target, space: spec.space || 'scene', w: 1 }];
+  if (spec.blend && (spec.blend.w ?? 0) > 0) {
+    const bw = Math.min(1, spec.blend.w);
+    for (const t of terms) t.w *= 1 - bw;
+    terms.push({ target: spec.blend.target, space: spec.blend.space || 'scene', w: bw });
+  }
+  return terms;
+}
+function mergeTerms(ta, tb, w) {
+  const by = new Map();
+  for (const [list, k] of [[ta, 1 - w], [tb, w]]) {
+    for (const t of list) {
+      const wt = t.w * k;
+      if (wt <= 0) continue;
+      const e = by.get(t.space);
+      if (!e) by.set(t.space, { space: t.space, w: wt, sum: [t.target[0] * wt, t.target[1] * wt, t.target[2] * wt] });
+      else { e.w += wt; for (let i = 0; i < 3; i++) e.sum[i] += t.target[i] * wt; }
+    }
+  }
+  return [...by.values()].map((e) => ({ space: e.space, w: e.w, target: e.sum.map((v) => v / e.w) }));
+}
+function neutralOf(key, v) {
+  if (key in NEUTRAL) return NEUTRAL[key];
+  if (typeof v === 'number') return 0;
+  if (Array.isArray(v)) return v.map((x) => neutralOf('', x));
+  if (key === 'palm' || key === 'look') return { ...v, weight: 0 };
+  if (v && typeof v === 'object') return {};
+  return v;
+}
+function mixVal(a, b, w, key) {
+  if (a === undefined && b === undefined) return undefined;
+  if (a === undefined || b === undefined) {
+    const v = a === undefined ? b : a;
+    if (KEEP.has(key) || typeof v === 'string' || typeof v === 'boolean') return v;
+    return a === undefined ? mixVal(neutralOf(key, b), b, w, key) : mixVal(a, neutralOf(key, a), w, key);
+  }
   if (typeof a === 'number' && typeof b === 'number') return a + (b - a) * w;
-  if (Array.isArray(a) && Array.isArray(b)) return a.map((v, i) => mixVal(v, b[i], w));
-  if (a && b && typeof a === 'object' && typeof b === 'object' && !Array.isArray(a) && !Array.isArray(b)) {
+  if (key === 'curl' && (Array.isArray(a) || Array.isArray(b))) {
+    const A = Array.isArray(a) ? a : [a, a, a, a, a], B = Array.isArray(b) ? b : [b, b, b, b, b];
+    return A.map((v, i) => v + (B[i] - v) * w);
+  }
+  if (Array.isArray(a) && Array.isArray(b)) return a.map((v, i) => mixVal(v, b[i], w, ''));
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    if (key === 'palm' || key === 'look') { a = { weight: 1, ...a }; b = { weight: 1, ...b }; }
     const out = {};
     for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
-      if (k === 'target' || k === 'space' || k === 'blend') continue;
-      out[k] = mixVal(a[k], b[k], w);
+      if (k === 'target' || k === 'space' || k === 'blend' || k === 'terms') continue;
+      if (key === 'look' && k === 'target') continue;
+      out[k] = mixVal(a[k], b[k], w, k);
     }
-    if ('target' in a || 'target' in b) {
-      const sa = a.space || 'scene', sb = b.space || 'scene';
-      if (!('target' in a)) { out.target = b.target; out.space = b.space; }
-      else if (!('target' in b)) { out.target = a.target; out.space = a.space; }
-      else if (sa === sb && !a.blend && !b.blend) { out.target = mixVal(a.target, b.target, w); out.space = a.space; }
-      else { out.target = a.target; out.space = a.space; out.blend = { target: b.target, space: b.space, w }; }
+    if ('target' in a || 'target' in b || a.terms || b.terms) {
+      if (key === 'look' || !('target' in a && 'target' in b)) {
+        // look targets / one-sided targets: lerp when both exist, else keep the defined one
+        const ta = a.target, tb = b.target;
+        out.target = ta && tb ? mixVal(ta, tb, w, '') : (ta || tb);
+        if (a.space || b.space) out.space = (ta ? a.space : b.space);
+      } else {
+        const terms = mergeTerms(termsOf(a), termsOf(b), w);
+        const main = terms.reduce((m, t) => (t.w > m.w ? t : m), terms[0]);
+        out.target = main.target; out.space = main.space;
+        if (terms.length > 1) out.terms = terms;
+      }
     }
     return out;
   }

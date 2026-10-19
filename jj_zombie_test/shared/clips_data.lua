@@ -97,6 +97,7 @@ ClipData = {
             meta = {
                 dir = 0,
                 gender = 'f',
+                yaw = 0,
             },
             name = 'fin_grab',
             playback = {},
@@ -119,6 +120,7 @@ ClipData = {
             meta = {
                 dir = 0,
                 gender = 'm',
+                yaw = 0,
             },
             name = 'fin_grab',
             playback = {},
@@ -141,6 +143,7 @@ ClipData = {
             meta = {
                 dir = 1,
                 gender = 'f',
+                yaw = 45,
             },
             name = 'fin_grab',
             playback = {},
@@ -163,6 +166,7 @@ ClipData = {
             meta = {
                 dir = 1,
                 gender = 'm',
+                yaw = 45,
             },
             name = 'fin_grab',
             playback = {},
@@ -185,6 +189,7 @@ ClipData = {
             meta = {
                 dir = 2,
                 gender = 'f',
+                yaw = 90,
             },
             name = 'fin_grab',
             playback = {},
@@ -207,6 +212,7 @@ ClipData = {
             meta = {
                 dir = 2,
                 gender = 'm',
+                yaw = 90,
             },
             name = 'fin_grab',
             playback = {},
@@ -229,6 +235,7 @@ ClipData = {
             meta = {
                 dir = 3,
                 gender = 'f',
+                yaw = 135,
             },
             name = 'fin_grab',
             playback = {},
@@ -251,6 +258,7 @@ ClipData = {
             meta = {
                 dir = 3,
                 gender = 'm',
+                yaw = 135,
             },
             name = 'fin_grab',
             playback = {},
@@ -273,6 +281,7 @@ ClipData = {
             meta = {
                 dir = 4,
                 gender = 'f',
+                yaw = 180,
             },
             name = 'fin_grab',
             playback = {},
@@ -295,6 +304,7 @@ ClipData = {
             meta = {
                 dir = 4,
                 gender = 'm',
+                yaw = 180,
             },
             name = 'fin_grab',
             playback = {},
@@ -317,6 +327,7 @@ ClipData = {
             meta = {
                 dir = 5,
                 gender = 'f',
+                yaw = -135,
             },
             name = 'fin_grab',
             playback = {},
@@ -339,6 +350,7 @@ ClipData = {
             meta = {
                 dir = 5,
                 gender = 'm',
+                yaw = -135,
             },
             name = 'fin_grab',
             playback = {},
@@ -361,6 +373,7 @@ ClipData = {
             meta = {
                 dir = 6,
                 gender = 'f',
+                yaw = -90,
             },
             name = 'fin_grab',
             playback = {},
@@ -383,6 +396,7 @@ ClipData = {
             meta = {
                 dir = 6,
                 gender = 'm',
+                yaw = -90,
             },
             name = 'fin_grab',
             playback = {},
@@ -405,6 +419,7 @@ ClipData = {
             meta = {
                 dir = 7,
                 gender = 'f',
+                yaw = -45,
             },
             name = 'fin_grab',
             playback = {},
@@ -427,6 +442,7 @@ ClipData = {
             meta = {
                 dir = 7,
                 gender = 'm',
+                yaw = -45,
             },
             name = 'fin_grab',
             playback = {},

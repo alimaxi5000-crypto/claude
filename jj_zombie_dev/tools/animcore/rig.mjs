@@ -12,7 +12,7 @@
 //   twist > 0 : turn to the character's left (yaw +Z)
 
 import {
-  qmul, qconj, qrot, qnorm, qaxis, qid, qfromTo, qbasis, qslerp,
+  qmul, qconj, qrot, qnorm, qaxis, qid, qfromTo, qbasis, qslerp, qdot,
   vadd, vsub, vscale, vnorm, vlen, vdot, vcross, vreject, vlerp, clamp, DEG,
 } from './math.mjs';
 import { BODY, localsFromModel } from './skeleton.mjs';
@@ -95,7 +95,32 @@ export class Rig {
   // Solve a pose. Returns { mover, rootT, P, Q, D, local } where P/Q are model-space bone
   // transforms, D the model-space deltas from rest and local the GTA local rotations.
   solve(pose = {}) {
+    // Root reach: translate the root so that a point on a bone (e.g. the mouth) moves towards a
+    // scene target. Translating the root moves every bone above the legs rigidly, so one extra
+    // solve lands it exactly (limbs with scene targets re-solve against the new root).
+    if (pose.rootReach && (pose.rootReach.weight ?? 1) > 0) {
+      const rr = pose.rootReach;
+      const first = this._solve(pose);
+      const i = this.skel.idx(rr.bone);
+      const qd = qnorm(qmul(first.mover.q, first.D[i]));
+      const pt = vadd(vadd(first.mover.p, qrot(first.mover.q, first.P[i])), qrot(qd, rr.offset || [0, 0, 0]));
+      let d = vscale(vsub(rr.target, pt), rr.weight ?? 1);
+      if (rr.axes) d = [d[0] * rr.axes[0], d[1] * rr.axes[1], d[2] * rr.axes[2]];
+      const len = vlen(d), max = rr.max ?? 0.25;
+      if (len > max) d = vscale(d, max / len);
+      const dBody = qrot(qconj(first.mover.q), d);
+      const root = pose.root || {};
+      const p0 = root.p || [0, 0, 0];
+      const sol = this._solve({ ...pose, root: { ...root, p: vadd(p0, dBody) } });
+      sol.reachOffset = d;
+      return sol;
+    }
+    return this._solve(pose);
+  }
+
+  _solve(pose) {
     const s = this.skel;
+    this.fades = [];
     const P = new Array(this.n), Q = new Array(this.n), D = new Array(this.n);
     const mover = {
       p: pose.mover?.p ? pose.mover.p.slice() : [0, 0, 0],
@@ -141,9 +166,11 @@ export class Rig {
           const dirScene = vsub(pose.look.target, headPosScene);
           const dirModel = dirToBody(dirScene);
           const local = qrot(qconj(pD), dirModel);
-          const yaw = clamp(Math.atan2(-local[0], local[1]), -80 * DEG, 80 * DEG);
+          const rawYaw = Math.atan2(-local[0], local[1]);
+          const yaw = clamp(rawYaw, -80 * DEG, 80 * DEG);
           const pitch = clamp(Math.atan2(local[2], Math.hypot(local[0], local[1])), -55 * DEG, 45 * DEG);
-          const w = pose.look.weight ?? 1;
+          // Targets behind the head flip sides at +-180 deg: fade the aim out before that.
+          const w = (pose.look.weight ?? 1) * clamp((165 * DEG - Math.abs(rawYaw)) / (45 * DEG), 0, 1);
           const aim = { bend: -pitch * w, twist: yaw * w, side: 0 };
           neckCtl = addRot(neckCtl, scaleRot(aim, 0.45));
           headCtl = addRot(headCtl, scaleRot(aim, 0.55));
@@ -225,7 +252,7 @@ export class Rig {
     }
 
     const local = localsFromModel(s, Q);
-    return { mover, rootT: P[this.rootI].slice(), P, Q, D, local };
+    return { mover, rootT: P[this.rootI].slice(), P, Q, D, local, fades: this.fades };
   }
 
   _footFwdRest(sd) {
@@ -244,7 +271,13 @@ export class Rig {
     // Target spaces: 'scene' (default), 'body' (entity frame), 'shoulder' (offset from the posed
     // shoulder joint, in body axes - independent of the torso posture).
     const resolve = (target, space) => (space === 'body' ? target : space === 'shoulder' ? vadd(S, target) : toBody(target));
-    let T = resolve(spec.target, spec.space);
+    let T;
+    if (spec.terms && spec.terms.length) {
+      // Weighted sum of targets in mixed spaces (produced by mixPose): continuous under any blend.
+      T = [0, 0, 0]; let ws = 0;
+      for (const tm of spec.terms) { const r = resolve(tm.target, tm.space); T = vadd(T, [r[0] * tm.w, r[1] * tm.w, r[2] * tm.w]); ws += tm.w; }
+      T = [T[0] / ws, T[1] / ws, T[2] / ws];
+    } else T = resolve(spec.target, spec.space);
     // Optional cross-fade to a second target (possibly in another space) without popping.
     if (spec.blend && (spec.blend.w ?? 0) > 0) T = vlerp(T, resolve(spec.blend.target, spec.blend.space), Math.min(1, spec.blend.w));
     const sx = sd === 'R' ? 1 : -1;
@@ -263,24 +296,44 @@ export class Rig {
     const leg = d.leg;
     const S = P[d.thighI];
     let T = spec.space === 'body' ? spec.target : toBody(spec.target);
-    if (spec.pivot) {
-      // Exact heel/toe roll: the given ground point stays fixed and the ankle is derived from
-      // the foot orientation and the skeleton's real foot geometry.
-      const pv = spec.pivot;
-      const pt = spec.space === 'body' ? [pv.x, pv.y, 0] : toBody([pv.x, pv.y, 0]);
-      const Df = this._footDelta(sd, spec, pD, mover);
-      const foot = this.skel.restP[d.footI];
-      let off, h;
-      if (pv.kind === 'toe' && d.toeI >= 0) {
+    // Foot geometry of THIS skeleton: ankle -> contact point offset (rest model) and the contact
+    // point's height above the ground when the foot is flat.
+    const foot = this.skel.restP[d.footI];
+    const geo = (kind) => {
+      if (kind === 'toe' && d.toeI >= 0) {
         const toe = this.skel.restP[d.toeI];
-        off = vsub(toe, foot);
-        h = toe[2] - this.skel.groundZ;
-      } else {
-        off = [0, -0.05, -(foot[2] - this.skel.groundZ)];
-        h = 0;
+        return { off: vsub(toe, foot), h: toe[2] - this.skel.groundZ };
       }
-      const point = [pt[0], pt[1], this.skel.groundZ + h + (pv.z || 0)];
-      T = vsub(point, qrot(Df, off));
+      return { off: [0, -0.05, -(foot[2] - this.skel.groundZ)], h: 0 };
+    };
+    const toB = (x, y) => (spec.space === 'body' ? [x, y, 0] : toBody([x, y, 0]));
+    const footD = (f) => this._footDelta(sd, { ...spec, foot: f }, pD, mover);
+    // Contact point (ground) of a flat foot whose ankle is at (ax, ay) with heading f.
+    const contactFlat = (kind, ax, ay, f) => {
+      const g = geo(kind);
+      const A = toB(ax, ay); A[2] = foot[2];
+      const p = vadd(A, qrot(footD({ ...f, pitch: 0, roll: 0 }), g.off));
+      return [p[0], p[1], this.skel.groundZ + g.h];
+    };
+    const ankleOn = (kind, point, f) => vsub(point, qrot(footD(f), geo(kind).off));
+    if (spec.pivot) {
+      // Exact heel/toe roll: the ground point stays fixed and the ankle is derived from the foot
+      // orientation and the skeleton's real foot geometry. With ax/ay the pivot is given as the
+      // flat-planted ankle position, so the contact point itself comes from this skeleton too.
+      const pv = spec.pivot;
+      let point;
+      // ayaw: heading of that flat foot when it differs from the current one (pivot turn).
+      if (pv.ax != null) point = contactFlat(pv.kind, pv.ax, pv.ay, pv.ayaw != null ? { yaw: pv.ayaw } : spec.foot || {});
+      else { const pt = toB(pv.x, pv.y); point = [pt[0], pt[1], this.skel.groundZ + geo(pv.kind).h]; }
+      point[2] += pv.z || 0;
+      T = ankleOn(pv.kind, point, spec.foot || {});
+    } else if (spec.swing) {
+      // Swing between the toe-off pose of plant a and the heel-strike pose of plant b, both
+      // derived from this skeleton's geometry (continuous with the pivot phases above).
+      const sw = spec.swing;
+      const A0 = ankleOn('toe', contactFlat('toe', sw.a.x, sw.a.y, sw.a.ayaw != null ? { yaw: sw.a.ayaw } : sw.a.foot), { ...sw.a.foot, pitch: sw.a.pitch });
+      const A1 = ankleOn('heel', contactFlat('heel', sw.b.x, sw.b.y, sw.b.foot), { ...sw.b.foot, pitch: sw.b.pitch });
+      T = [A0[0] + (A1[0] - A0[0]) * sw.h, A0[1] + (A1[1] - A0[1]) * sw.h, A0[2] + (A1[2] - A0[2]) * sw.v + (sw.lift || 0)];
     }
     const sx = sd === 'R' ? 1 : -1;
     let pole = spec.pole;
@@ -335,7 +388,12 @@ export class Rig {
       const fwdB = qrot(qconj(mover.q), spec.palm.fingerDir);
       const palmB = qrot(qconj(mover.q), spec.palm.palmDir);
       const Dabs = qnorm(qmul(qbasis(fwdB, palmB), qconj(qbasis(h.fwd, h.palm))));
-      Dh = qslerp(Dh, Dabs, spec.palm.weight ?? 1);
+      // A palm target close to 180 deg away from the natural wrist is physically implausible and
+      // its shortest slerp path flips sides between frames: fade its weight out instead.
+      const ang = 2 * Math.acos(Math.min(1, Math.abs(qdot(Dh, Dabs))));
+      const fade = clamp((175 * DEG - ang) / (45 * DEG), 0, 1);
+      if (fade < 1) this.fades.push({ side: sd, angle: ang / DEG });
+      Dh = qslerp(Dh, Dabs, (spec.palm.weight ?? 1) * fade);
     }
     return Dh;
   }

@@ -80,7 +80,7 @@ function clinch(ctx, p = {}) {
   const zJaw = at(ctx, 'zombie', C.zombieJaw);
   const rContact = vadd(vscale(zThroat, 1 - (p.jaw ?? 0.6)), vscale(zJaw, p.jaw ?? 0.6));
   const vL = grip(zChestL, [0.2, 0.15, 1], [0.1, 1, 0.1], { palmCenter: 0.07, weight: 0.75 });
-  const vR = grip(rContact, [-0.35, 0.35, 0.85], [0.0, 0.85, 0.5], { palmCenter: 0.06, weight: 0.6 });
+  const vR = grip(rContact, [-0.35, 0.35, 0.85], [-0.8, 0.5, 0.3], { palmCenter: 0.06, weight: 0.6 });
   const victim = {
     mover: { p: [0, 0, 0], yaw: 0 },
     root: vRoot,
@@ -129,7 +129,7 @@ const clinchContacts = (from, to) => [
 const CLINCH_TOUCH = [
   ['zombie.foreL', 'victim.*'], ['zombie.foreR', 'victim.*'], ['zombie.upperL', 'victim.foreR'], ['zombie.upperR', 'victim.foreL'],
   ['victim.foreL', 'zombie.*'], ['victim.foreR', 'zombie.*'], ['victim.upperL', 'zombie.foreR'], ['victim.upperR', 'zombie.foreL'],
-  ['zombie.head', 'victim.chest'], ['zombie.head', 'victim.head'], ['zombie.head', 'victim.upperL'], ['zombie.head', 'victim.foreR'],
+  ['zombie.head', 'victim.chest'], ['zombie.head', 'victim.neck'], ['zombie.head', 'victim.head'], ['zombie.head', 'victim.upperL'], ['zombie.head', 'victim.foreR'],
 ];
 
 // ---------------------------------------------------------------- struggle loops

@@ -26,10 +26,14 @@ export const DEFAULT_LIMITS = {
 };
 
 // Capsules for interpenetration tests: [from bone, to bone, radius].
+// Optional 4th / 5th entries: end / start offsets in that bone's rest model frame.
+// The chest ends at collarbone height (Neck_1 sits at the top of the shoulders), the neck is a
+// thin capsule of its own and the head capsule covers skull and jaw only.
 const CAPSULES = {
   torso: ['SKEL_Spine0', 'SKEL_Spine3', 0.13],
-  chest: ['SKEL_Spine2', 'SKEL_Neck_1', 0.12],
-  head: ['SKEL_Neck_1', 'SKEL_Head', 0.105, [0, 0.02, 0.1]],
+  chest: ['SKEL_Spine2', 'SKEL_Neck_1', 0.12, [0, 0, -0.1]],
+  neck: ['SKEL_Neck_1', 'SKEL_Head', 0.06],
+  head: ['SKEL_Head', 'SKEL_Head', 0.1, [0, 0.02, 0.1], [0, 0.03, -0.01]],
   upperL: ['SKEL_L_UpperArm', 'SKEL_L_Forearm', 0.052],
   upperR: ['SKEL_R_UpperArm', 'SKEL_R_Forearm', 0.052],
   foreL: ['SKEL_L_Forearm', 'SKEL_L_Hand', 0.042],
@@ -43,13 +47,17 @@ export const CAPSULE_NAMES = Object.keys(CAPSULES);
 
 export function capsulesOf(skel, sol) {
   const out = {};
-  for (const [k, [a, b, r, off]] of Object.entries(CAPSULES)) {
+  for (const [k, [a, b, r, off, offA]] of Object.entries(CAPSULES)) {
     if (!skel.has(a) || !skel.has(b)) continue;
-    const pa = sol.world.P[skel.idx(a)];
+    let pa = sol.world.P[skel.idx(a)];
     let pb = sol.world.P[skel.idx(b)];
     if (off) {
       const d = qnorm(qmul(sol.mover.q, sol.D[skel.idx(b)]));
       pb = vadd(pb, qrot(d, off));
+    }
+    if (offA) {
+      const d = qnorm(qmul(sol.mover.q, sol.D[skel.idx(a)]));
+      pa = vadd(pa, qrot(d, offA));
     }
     out[k] = { a: pa, b: pb, r };
   }
@@ -226,7 +234,9 @@ export function measureScene(sampled, opts = {}) {
       const t = f / fps;
       if (t < c.from || t > c.to) return;
       const sa = sampled.skeletons[c.actor];
-      const pa = sampled.frames[c.actor][f].world.P[sa.idx(c.bone)];
+      const solA = sampled.frames[c.actor][f];
+      const ia = sa.idx(c.bone);
+      const pa = vadd(solA.world.P[ia], qrot(qnorm(qmul(solA.mover.q, solA.D[ia])), c.offset || [0, 0, 0]));
       const sb = sampled.skeletons[c.target.actor];
       const solB = sampled.frames[c.target.actor][f];
       const ib = sb.idx(c.target.bone);

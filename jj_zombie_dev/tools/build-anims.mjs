@@ -110,6 +110,8 @@ for (const src of sources) {
       exportClips.push(clip);
       sceneEntry.actors[actor] = name;
       if (!metrics.ok) for (const [k, v] of Object.entries(metrics.items)) if (!v.pass) fail(`${name}: ${k} = ${v.value} > ${v.limit} @frame ${v.frame} (${v.detail})`);
+      const fadeFrames = frames.filter((s) => s.fades?.length).length;
+      if (fadeFrames) log(`  WARN ${name}: implausible palm target faded in ${fadeFrames} frame(s)`);
     }
     if (sampled.actors.length > 1 || src.contacts) {
       const contacts = typeof src.contacts === 'function' ? src.contacts(variant) : src.contacts;

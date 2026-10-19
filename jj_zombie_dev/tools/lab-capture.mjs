@@ -3,6 +3,7 @@
 //
 //   node tools/lab-capture.mjs [--scene name] [--variant v] [--seq name] [--cams front,side]
 //                              [--source src|ycd] [--grid 4x3] [--out captures/lab]
+//                              [--t0 s] [--t1 s] [--show capsules,labels] [--tag name]
 // Prints the written files and fails on browser console errors.
 
 import fs from 'node:fs';
@@ -47,8 +48,11 @@ const written = [];
 for (const job of jobs) {
   await page.evaluate((j) => window.JJZ_LAB.select({ ...j }), { ...job, source });
   for (const cam of cams) {
-    const url = await page.evaluate((o) => window.JJZ_LAB.contactSheet(o), { cols, rows, cameraName: cam });
-    const name = `${job.sequence || job.scene}${job.variant ? '_' + job.variant : ''}_${cam}_${source}.png`;
+    const t0 = opt('--t0') != null ? +opt('--t0') : 0, t1 = opt('--t1') != null ? +opt('--t1') : null;
+    for (const k of (opt('--show') || '').split(',').filter(Boolean)) await page.evaluate((key) => window.JJZ_LAB.setShow(key, true), k);
+    const url = await page.evaluate((o) => window.JJZ_LAB.contactSheet(o), { cols, rows, cameraName: cam, t0, t1 });
+    const tag = opt('--tag') ? '_' + opt('--tag') : '';
+    const name = `${job.sequence || job.scene}${job.variant ? '_' + job.variant : ''}_${cam}_${source}${tag}.png`;
     const file = path.join(outDir, name);
     fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
     written.push(file);
