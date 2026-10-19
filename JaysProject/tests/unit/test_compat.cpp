@@ -252,6 +252,19 @@ TEST(runtime_script_errors_do_not_abort_start)
 	CHECK(cap.Contains("could not open broken/missing.lua"));
 }
 
+TEST(runtime_skips_non_lua_scripts)
+{
+	LogCapture cap;
+	ResourceManager mgr(Side::Server);
+	AddMem(mgr, "mixed", { { "fxmanifest.lua", "fx_version 'cerulean'\nserver_scripts { 'a.js', 'b.lua' }" },
+							 { "a.js", "console.log('js')" },
+							 { "b.lua", "print('lua ran')" } });
+	StartOk(mgr, "mixed");
+	CHECK(cap.Contains("a.js skipped: only Lua scripts are supported"));
+	CHECK(cap.Contains("lua ran"));
+	CHECK(!cap.Contains("error loading"));
+}
+
 TEST(runtime_shared_scripts_load_first)
 {
 	LogCapture cap;

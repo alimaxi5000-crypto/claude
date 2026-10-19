@@ -173,7 +173,8 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px r
 .logs-card { padding: 0; overflow: hidden; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--border); }
 .toolbar select, .toolbar input { padding: 6px 10px; font-size: 13px; }
-.toolbar input { width: 220px; }
+.toolbar input:not([type="checkbox"]) { width: 220px; }
+input[type="checkbox"] { width: auto; padding: 0; margin: 0; accent-color: var(--accent); box-shadow: none; }
 .spacer { flex: 1; }
 .check { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
 .log-list { height: calc(100vh - 230px); overflow-y: auto; font-family: var(--mono); font-size: 12.5px; padding: 8px 0; }

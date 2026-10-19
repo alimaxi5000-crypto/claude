@@ -87,6 +87,9 @@ if(JAYS_BUILD_TESTS)
   target_compile_definitions(jays-unit-tests PRIVATE JAYS_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
   add_test(NAME unit COMMAND jays-unit-tests)
 
+  add_executable(jays-bench tests/bench/bench.cpp)
+  target_link_libraries(jays-bench PRIVATE jays_compat)
+
   find_package(Python3 COMPONENTS Interpreter)
   if(Python3_FOUND AND TARGET jays-server AND TARGET jays-client)
     add_test(NAME integration

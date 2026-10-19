@@ -318,6 +318,13 @@ bool ResourceManager::StartInternal(const std::string& name, std::vector<std::st
 	int loaded = 0;
 	for (auto& path : res->ScriptsFor(m_side))
 	{
+		if (path.size() < 4 || path.compare(path.size() - 4, 4, ".lua") != 0)
+		{
+			// FiveM routes .js / .net.dll files to other runtimes (F-013); V0.1 only has Lua.
+			log::Warn("resources", name + "/" + path + " skipped: only Lua scripts are supported");
+			continue;
+		}
+
 		std::string code;
 		if (!res->ReadFile(*this, path, code))
 		{

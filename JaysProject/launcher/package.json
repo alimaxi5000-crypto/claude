@@ -18,11 +18,31 @@
   "build": {
     "appId": "dev.jaysproject.launcher",
     "productName": "Jays Project",
-    "files": ["src/**/*", "assets/**/*", "package.json"],
-    "extraResources": [
-      { "from": "../build/bin", "to": "bin", "filter": ["jays-client*", "jays-server*"] },
-      { "from": "../server/data", "to": "server-data" }
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
     ],
-    "win": { "target": "portable", "icon": "assets/icon.png" }
+    "extraResources": [
+      {
+        "from": "../build-win/bin",
+        "to": "bin",
+        "filter": [
+          "jays-client*",
+          "jays-server*"
+        ]
+      },
+      {
+        "from": "../server/data",
+        "to": "server-data"
+      }
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "assets/icon.png"
+    },
+    "directories": {
+      "output": "out"
+    }
   }
 }
