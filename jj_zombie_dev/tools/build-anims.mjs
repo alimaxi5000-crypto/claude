@@ -87,6 +87,12 @@ for (const src of sources) {
       key, name: src.name, variant: variant.suffix || '', dict, duration: +sampled.duration.toFixed(4),
       loop: !!src.loop, actors: {}, events: (typeof src.events === 'function' ? src.events(variant) : src.events) || [], meta: { ...(variant.meta || {}), ...(src.meta || {}) },
       playback: src.playback || {},
+      // Metric settings of this clip source, so the lab's live metrics judge exactly like the build.
+      checks: {
+        limits: src.limits || {}, actorLimits: src.actorLimits || {}, airborne: src.airborne || {}, noGround: !!src.noGround,
+        allowSelfContact: src.allowSelfContact || [], allowTouch: src.allowTouch || [],
+        contacts: (typeof src.contacts === 'function' ? src.contacts(variant) : src.contacts) || [],
+      },
     };
     for (const actor of sampled.actors) {
       const skel = sampled.skeletons[actor];

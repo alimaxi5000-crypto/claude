@@ -52,7 +52,8 @@ for (const job of jobs) {
     for (const k of (opt('--show') || '').split(',').filter(Boolean)) await page.evaluate((key) => window.JJZ_LAB.setShow(key, true), k);
     const url = await page.evaluate((o) => window.JJZ_LAB.contactSheet(o), { cols, rows, cameraName: cam, t0, t1 });
     const tag = opt('--tag') ? '_' + opt('--tag') : '';
-    const name = `${job.sequence || job.scene}${job.variant ? '_' + job.variant : ''}_${cam}_${source}${tag}.png`;
+    const slug = (x) => x.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_|_$/g, '');
+    const name = `${job.sequence ? 'seq_' + slug(job.sequence) : job.scene}${job.variant ? '_' + job.variant : ''}_${cam}_${source}${tag}.png`;
     const file = path.join(outDir, name);
     fs.writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
     written.push(file);

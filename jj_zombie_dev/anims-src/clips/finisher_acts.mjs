@@ -270,7 +270,8 @@ const shove = {
     ], { lift: 0.1 })(t);
     const flail = (side) => {
       const sx = side === 'R' ? 1 : -1;
-      return { target: [sx * (0.1 + 0.2 * whip), 0.3 - 0.1 * whip, 0.1 + 0.3 * whip], space: 'shoulder', pole: [sx * 0.8, -0.3, -0.4], fingers: CLAW };
+      // Inertia: the chest is driven back, the arms trail forward towards the victim.
+      return { target: [sx * (0.16 + 0.12 * whip), 0.42 - 0.04 * whip, 0.04 + 0.14 * whip], space: 'shoulder', pole: [sx * 0.8, -0.3, -0.4], fingers: CLAW };
     };
     const zThrown = merge(zombieSpine(1.0 - 0.8 * whip, { bend: -0.4 * whip, neckBend: -0.25 * whip, headBend: -0.3 * whip, shrug: 0.2 * whip }), {
       mover: zm,

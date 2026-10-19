@@ -37,10 +37,23 @@ export function writeLabData({ skeletons, scenes, exportClips, report, dicts, st
     const f = path.join(streamDir, `${d}.ycd`);
     if (fs.existsSync(f)) ycd[d] = fs.readFileSync(f).toString('base64');
   }
+  // Playable chains of the finisher, as the game strings them together.
+  const has = (k) => scenes.some((s) => s.key === k);
+  const sequences = [];
+  for (const g of ['m', 'f']) {
+    const label = g === 'm' ? 'männlich' : 'weiblich';
+    sequences.push({ name: `Finisher Erfolg (${label})`, items: [
+      { key: `fin_grab:d0_${g}` }, { key: `fin_struggle_mid:${g}`, repeat: 2 }, { key: `fin_struggle_high:${g}`, repeat: 2 }, { key: `fin_shove:${g}` }] });
+    sequences.push({ name: `Finisher Biss von hinten (${label})`, items: [
+      { key: `fin_grab:d4_${g}` }, { key: `fin_struggle_mid:${g}` }, { key: `fin_struggle_low:${g}`, repeat: 2 }, { key: `fin_bite:${g}` }, { key: `fin_recover:${g}` }] });
+  }
+  sequences.push({ name: 'Zombie: Brüllen, Rennen, Treffer, Tod', items: [
+    { key: 'zmove_alert_roar:' }, { key: 'zmove_runner_run:', repeat: 3 }, { key: 'zreact_hit_front:' }, { key: 'zreact_death_a:' }] });
   const data = {
     generated: new Date().toISOString(),
+    sequences: sequences.map((q) => ({ ...q, items: q.items.filter((i) => has(i.key)).map((i) => ({ repeat: 1, ...i })) })).filter((q) => q.items.length),
     skeletons: skel,
-    scenes: scenes.map((s) => ({ key: s.key, name: s.name, variant: s.variant, dict: s.dict, duration: s.duration, loop: s.loop, actors: s.actors, events: s.events, meta: s.meta, sceneMetrics: s.sceneMetrics || null })),
+    scenes: scenes.map((s) => ({ key: s.key, name: s.name, variant: s.variant, dict: s.dict, duration: s.duration, loop: s.loop, actors: s.actors, events: s.events, meta: s.meta, checks: s.checks || null, sceneMetrics: s.sceneMetrics || null })),
     clips, ycd,
     blends: report.blends, problems: report.problems,
   };

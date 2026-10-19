@@ -377,13 +377,24 @@ function computeLive() {
   for (const actor of playback.actors) {
     const frames = [];
     let skel = null;
-    for (let f = 0; f < n; f++) { const e = evalActor(actor, f / FPS); skel = e.skel; frames.push(e.sol); }
+    // Actors missing from a segment (e.g. the zombie during fin_recover) are measured on the
+    // frames where they exist.
+    for (let f = 0; f < n; f++) { const e = evalActor(actor, f / FPS); if (!e) continue; skel = e.skel; frames.push(e.sol); }
+    if (!skel || frames.length < 2) continue;
     sampled.skeletons[actor] = skel;
     sampled.frames[actor] = frames;
     const scene = playback.segs[0].scene;
-    live.actors[actor] = measureActor(skel, frames, { loop: playback.segs.length === 1 && scene.loop, noGround: false });
+    // Single clip: judge with the clip's own settings (same as the build). Sequences: defaults.
+    const ck = playback.segs.length === 1 ? (scene.checks || {}) : {};
+    live.actors[actor] = measureActor(skel, frames, {
+      loop: playback.segs.length === 1 && scene.loop, noGround: !!ck.noGround,
+      limits: { ...(ck.limits || {}), ...((ck.actorLimits || {})[actor] || {}) },
+      airborne: (ck.airborne || {})[actor], allowSelfContact: (ck.allowSelfContact || []).includes(actor),
+    });
   }
-  if (playback.actors.length > 1) live.scene = measureScene(sampled, {});
+  const ck = playback.segs.length === 1 ? (playback.segs[0].scene.checks || {}) : {};
+  const full = playback.actors.every((a) => sampled.frames[a]?.length === n);
+  if (playback.actors.length > 1 && full) live.scene = measureScene(sampled, { contacts: ck.contacts, allowTouch: ck.allowTouch, limits: ck.limits });
   renderMetrics();
 }
 
