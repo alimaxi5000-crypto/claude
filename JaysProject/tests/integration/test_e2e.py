@@ -17,6 +17,7 @@ import time
 import traceback
 
 EXE = ".exe" if os.name == "nt" else ""
+RUNNER = []  # optional launcher prefix, e.g. ["wine64"] for Windows binaries on Linux
 RESULTS = []
 
 
@@ -38,7 +39,7 @@ class Proc:
         self.lines = []
         self.raw = []
         self.p = subprocess.Popen(
-            args,
+            RUNNER + args,
             stdin=subprocess.PIPE if stdin else subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -197,7 +198,7 @@ def probe_reports_fxserver_compatible_info(ctx):
     port = free_port()
     srv = ctx.server(port)
     try:
-        p = subprocess.run([ctx.client_exe, "--probe", f"127.0.0.1:{port}", "--timeout", "2000", "--log-level", "error"],
+        p = subprocess.run(RUNNER + [ctx.client_exe, "--probe", f"127.0.0.1:{port}", "--timeout", "2000", "--log-level", "error"],
                            capture_output=True, text=True, timeout=20)
         check(p.returncode == 0, f"probe exit {p.returncode}: {p.stdout} {p.stderr}")
         data = json.loads(p.stdout.strip().splitlines()[-1])
@@ -210,7 +211,7 @@ def probe_reports_fxserver_compatible_info(ctx):
         srv.stop()
 
     # probing a dead endpoint fails cleanly
-    p = subprocess.run([ctx.client_exe, "--probe", f"127.0.0.1:{free_port()}", "--timeout", "600", "--log-level", "error"],
+    p = subprocess.run(RUNNER + [ctx.client_exe, "--probe", f"127.0.0.1:{free_port()}", "--timeout", "600", "--log-level", "error"],
                        capture_output=True, text=True, timeout=20)
     check(p.returncode == 3, f"dead probe exit {p.returncode}")
 
@@ -329,7 +330,7 @@ def server_full_and_console_commands(ctx):
 
 @test
 def config_errors_fail_startup(ctx):
-    p = subprocess.run([ctx.server_exe, "--config", os.path.join(ctx.project, "does-not-exist.cfg"), "--no-console"],
+    p = subprocess.run(RUNNER + [ctx.server_exe, "--config", os.path.join(ctx.project, "does-not-exist.cfg"), "--no-console"],
                        capture_output=True, text=True, timeout=20)
     check(p.returncode == 1, f"exit code {p.returncode}")
     check("could not open config file" in p.stdout, "error message: " + p.stdout)
@@ -337,7 +338,7 @@ def config_errors_fail_startup(ctx):
     port = free_port()
     blocker = ctx.server(port)
     try:
-        p = subprocess.run([ctx.server_exe, "--config", ctx.cfg, "--endpoint", f"127.0.0.1:{port}", "--no-console"],
+        p = subprocess.run(RUNNER + [ctx.server_exe, "--config", ctx.cfg, "--endpoint", f"127.0.0.1:{port}", "--no-console"],
                            capture_output=True, text=True, timeout=20)
         check(p.returncode == 1 and "bind/listen" in p.stdout, "port in use should fail: " + p.stdout)
     finally:
@@ -355,11 +356,17 @@ def client_local_resource_mode(ctx):
 
 
 def main():
+    global EXE
     ap = argparse.ArgumentParser()
     ap.add_argument("--bin-dir", required=True)
     ap.add_argument("--project-dir", required=True)
     ap.add_argument("-k", default="")
+    ap.add_argument("--exe-suffix", default=None, help="executable suffix, e.g. .exe")
+    ap.add_argument("--runner", default="", help="command prefix for the binaries, e.g. wine64")
     a = ap.parse_args()
+    if a.exe_suffix is not None:
+        EXE = a.exe_suffix
+    RUNNER.extend(a.runner.split())
     ctx = Ctx(os.path.abspath(a.bin_dir), os.path.abspath(a.project_dir))
 
     failed = 0

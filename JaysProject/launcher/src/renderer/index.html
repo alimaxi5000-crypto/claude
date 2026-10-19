@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Jays Project</title>
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div class="app">
+		<aside class="sidebar">
+			<div class="brand">
+				<svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
+					<defs>
+						<linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+							<stop offset="0" stop-color="#8b6cff"/>
+							<stop offset="1" stop-color="#22d3ee"/>
+						</linearGradient>
+					</defs>
+					<rect x="2" y="2" width="44" height="44" rx="12" fill="url(#lg)"/>
+					<path d="M28 13v15.5a7 7 0 0 1-12.8 3.9" fill="none" stroke="#0d0f14" stroke-width="5" stroke-linecap="round"/>
+				</svg>
+				<div>
+					<div class="brand-name">JAYS PROJECT</div>
+					<div class="brand-sub">0.1 Alpha</div>
+				</div>
+			</div>
+
+			<nav class="nav" aria-label="Main">
+				<button class="nav-item active" data-page="play" data-testid="nav-play">
+					<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Play</span>
+				</button>
+				<button class="nav-item" data-page="server" data-testid="nav-server">
+					<svg viewBox="0 0 24 24"><path d="M4 4h16v6H4zm0 10h16v6H4zm3-7h2m-2 10h2" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>Local server</span>
+				</button>
+				<button class="nav-item" data-page="logs" data-testid="nav-logs">
+					<svg viewBox="0 0 24 24"><path d="M5 6h14M5 12h14M5 18h9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Logs</span>
+					<span class="badge hidden" id="log-error-count" data-testid="log-error-count">0</span>
+				</button>
+				<button class="nav-item" data-page="settings" data-testid="nav-settings">
+					<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3M4.9 4.9l2.1 2.1m10 10 2.1 2.1M4.9 19.1 7 17m10-10 2.1-2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Settings</span>
+				</button>
+				<button class="nav-item" data-page="about" data-testid="nav-about">
+					<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 11v6m0-10v.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>About</span>
+				</button>
+			</nav>
+
+			<div class="sidebar-footer">
+				<div class="mini-status"><span class="dot" id="side-dot"></span><span id="side-state" data-testid="side-state">Idle</span></div>
+				<div class="version" data-testid="version-label">Launcher v<span id="launcher-version">…</span> · Client <span id="client-version">…</span></div>
+			</div>
+		</aside>
+
+		<main class="main">
+			<div class="error-banner hidden" id="error-banner" role="alert" data-testid="error-banner">
+				<div>
+					<strong id="error-title">Error</strong>
+					<span id="error-message"></span>
+				</div>
+				<div class="banner-actions">
+					<button class="btn small ghost" id="error-report" data-testid="error-report">Save error report</button>
+					<button class="btn small ghost" id="error-dismiss" data-testid="error-dismiss">Dismiss</button>
+				</div>
+			</div>
+			<div class="toast hidden" id="toast" data-testid="toast"></div>
+
+			<!-- PLAY -->
+			<section class="page active" id="page-play">
+				<header class="page-header">
+					<h1>Play</h1>
+					<p>Join a Jays Project test server. The V0.1 client is headless: it runs resources and networking, not GTA V.</p>
+				</header>
+
+				<div class="grid two">
+					<div class="card">
+						<h2>Server connection</h2>
+						<form id="connect-form" class="form" autocomplete="off">
+							<label>Server address
+								<input id="address" data-testid="address" placeholder="127.0.0.1:30120" spellcheck="false">
+							</label>
+							<label>Player name
+								<input id="player-name" data-testid="player-name" maxlength="32" spellcheck="false">
+							</label>
+							<div class="form-error" id="connect-error" data-testid="connect-error"></div>
+							<div class="row">
+								<button type="submit" class="btn primary" id="connect-btn" data-testid="connect">Connect</button>
+								<button type="button" class="btn danger hidden" id="disconnect-btn" data-testid="disconnect">Disconnect</button>
+								<button type="button" class="btn ghost" id="probe-btn" data-testid="probe">Query server</button>
+							</div>
+						</form>
+					</div>
+
+					<div class="card status-card">
+						<h2>Connection status</h2>
+						<div class="state-line">
+							<span class="state-pill" id="state-pill" data-state="idle" data-testid="client-state">idle</span>
+							<span class="state-detail" id="state-detail" data-testid="state-detail">Not connected</span>
+						</div>
+						<ol class="stepper" id="stepper">
+							<li data-step="connecting">Connect</li>
+							<li data-step="handshaking">Handshake</li>
+							<li data-step="downloading">Download</li>
+							<li data-step="loading">Load</li>
+							<li data-step="active">In session</li>
+						</ol>
+						<dl class="stats">
+							<div><dt>Ping</dt><dd id="stat-ping" data-testid="stat-ping">—</dd></div>
+							<div><dt>Session</dt><dd id="stat-session">—</dd></div>
+							<div><dt>Errors</dt><dd id="stat-errors">0</dd></div>
+						</dl>
+					</div>
+				</div>
+
+				<div class="grid two">
+					<div class="card">
+						<h2>Server info</h2>
+						<div id="server-info" class="server-info empty" data-testid="server-info">Use “Query server” to read the server's info (UDP getinfo and /info.json).</div>
+					</div>
+					<div class="card">
+						<h2>Client console</h2>
+						<form id="command-form" class="command-form">
+							<input id="command" data-testid="command" placeholder="ping · say hello · threads 3" spellcheck="false" autocomplete="off">
+							<button class="btn" type="submit" data-testid="send-command">Run</button>
+						</form>
+						<div class="feed" id="feed" data-testid="feed"></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- SERVER -->
+			<section class="page" id="page-server">
+				<header class="page-header">
+					<h1>Local test server</h1>
+					<p>Runs <code>jays-server</code> with the bundled demo configuration on this machine only (127.0.0.1).</p>
+				</header>
+				<div class="grid two">
+					<div class="card">
+						<h2>Server process</h2>
+						<div class="state-line">
+							<span class="state-pill" id="server-pill" data-state="stopped" data-testid="server-state">stopped</span>
+							<span class="state-detail" id="server-detail"></span>
+						</div>
+						<div class="row">
+							<button class="btn primary" id="server-start" data-testid="server-start">Start server</button>
+							<button class="btn danger" id="server-stop" data-testid="server-stop" disabled>Stop server</button>
+							<button class="btn ghost" id="server-use" data-testid="server-use">Use as connect address</button>
+						</div>
+						<p class="hint">Port is configured in Settings. Resources: <code>server/data/resources</code>.</p>
+					</div>
+					<div class="card">
+						<h2>Server console</h2>
+						<form id="server-command-form" class="command-form">
+							<input id="server-command" data-testid="server-command" placeholder="status · players · say hi · restart jays-chat" spellcheck="false" autocomplete="off">
+							<button class="btn" type="submit">Run</button>
+						</form>
+						<div class="feed tall" id="server-feed" data-testid="server-feed"></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- LOGS -->
+			<section class="page" id="page-logs">
+				<header class="page-header">
+					<h1>Diagnostic logs</h1>
+					<p>Live structured logs from the launcher, client and local server.</p>
+				</header>
+				<div class="card logs-card">
+					<div class="toolbar">
+						<select id="log-source" data-testid="log-source">
+							<option value="">All sources</option>
+							<option value="client">Client</option>
+							<option value="server">Server</option>
+							<option value="launcher">Launcher</option>
+						</select>
+						<select id="log-level" data-testid="log-level">
+							<option value="0">All levels</option>
+							<option value="1">Info and above</option>
+							<option value="2">Warnings and errors</option>
+							<option value="3">Errors only</option>
+						</select>
+						<input id="log-search" placeholder="Filter text…" data-testid="log-search" spellcheck="false">
+						<label class="check"><input type="checkbox" id="log-follow" checked> Follow</label>
+						<span class="spacer"></span>
+						<button class="btn small ghost" id="log-clear" data-testid="log-clear">Clear view</button>
+						<button class="btn small" id="log-export" data-testid="log-export">Export…</button>
+					</div>
+					<div class="log-list" id="log-list" data-testid="log-list"></div>
+				</div>
+			</section>
+
+			<!-- SETTINGS -->
+			<section class="page" id="page-settings">
+				<header class="page-header">
+					<h1>Settings</h1>
+					<p>Stored in the launcher profile folder (settings.json).</p>
+				</header>
+				<div class="card">
+					<form id="settings-form" class="form settings" novalidate>
+						<label>Player name <input name="playerName" data-testid="set-player-name" maxlength="32"></label>
+						<label>Default server address <input name="serverAddress" data-testid="set-server-address" spellcheck="false"></label>
+						<label>Local server port <input name="localServerPort" type="number" min="1" max="65535" data-testid="set-port"></label>
+						<label>Log level
+							<select name="logLevel" data-testid="set-log-level">
+								<option value="debug">debug</option>
+								<option value="info">info</option>
+								<option value="warn">warn</option>
+								<option value="error">error</option>
+							</select>
+						</label>
+						<label class="wide">Client executable (optional override) <input name="clientPath" placeholder="auto-detect" spellcheck="false"></label>
+						<label class="wide">Server executable (optional override) <input name="serverPath" placeholder="auto-detect" spellcheck="false"></label>
+						<div class="form-error wide" id="settings-error" data-testid="settings-error"></div>
+						<div class="row wide">
+							<button class="btn primary" type="submit" data-testid="settings-save">Save settings</button>
+							<button class="btn ghost" type="button" id="settings-reset" data-testid="settings-reset">Reset to defaults</button>
+						</div>
+					</form>
+				</div>
+			</section>
+
+			<!-- ABOUT -->
+			<section class="page" id="page-about">
+				<header class="page-header">
+					<h1>About Jays Project</h1>
+					<p>Version 0.1 Alpha — local experimental prototype.</p>
+				</header>
+				<div class="grid two">
+					<div class="card">
+						<h2>Components</h2>
+						<dl class="kv" id="about-info" data-testid="about-info"></dl>
+					</div>
+					<div class="card">
+						<h2>What this build can and cannot do</h2>
+						<ul class="caps">
+							<li class="yes">Runs FiveM-style Lua resources (fxmanifest, events, exports, commands, threads)</li>
+							<li class="yes">Connects a headless client to a Jays test server over its own protocol</li>
+							<li class="yes">Queries server info in the FXServer getinfo / info.json format</li>
+							<li class="no">Does not start or inject into GTA V; no game natives, entities or sync</li>
+							<li class="no">Cannot join FiveM (FXServer) game sessions</li>
+						</ul>
+						<div class="row">
+							<button class="btn" id="about-report" data-testid="about-report">Save diagnostic report</button>
+							<button class="btn ghost" id="about-open-reports">Open reports folder</button>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+	</div>
+	<script src="app.js"></script>
+</body>
+</html>

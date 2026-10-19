@@ -748,12 +748,12 @@ private:
 				case 't': out += '\t'; break;
 				case 'u':
 				{
-					uint32_t cp;
+					uint32_t cp = 0;
 					if (!Hex4(cp)) return false;
 					if (cp >= 0xD800 && cp <= 0xDBFF && m_s.substr(m_pos, 2) == "\\u")
 					{
 						m_pos += 2;
-						uint32_t lo;
+						uint32_t lo = 0;
 						if (!Hex4(lo)) return false;
 						cp = 0x10000 + ((cp - 0xD800) << 10) + (lo - 0xDC00);
 					}

@@ -1,0 +1,8 @@
+build-win/bin/jays-client.exe:
+	DLL Name: KERNEL32.dll
+	DLL Name: WS2_32.dll
+	DLL Name: msvcrt.dll
+build-win/bin/jays-server.exe:
+	DLL Name: KERNEL32.dll
+	DLL Name: WS2_32.dll
+	DLL Name: msvcrt.dll
