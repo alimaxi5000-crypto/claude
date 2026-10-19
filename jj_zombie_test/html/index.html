@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>jj_zombie_test</title>
+<link rel="stylesheet" href="finisher.css">
+</head>
+<body>
+<div id="fin" class="fin hidden" aria-live="polite">
+  <div class="fin-key">
+    <span class="ring"></span>
+    <span class="cap" id="fin-key">E</span>
+  </div>
+  <div class="fin-body">
+    <div class="fin-row">
+      <span class="fin-text" id="fin-text">Drück ihn weg!</span>
+      <span class="fin-press" id="fin-press">DRÜCKEN</span>
+    </div>
+    <div class="bar">
+      <div class="fill" id="fin-fill"></div>
+      <div class="mark" id="mark-low"></div>
+      <div class="mark" id="mark-high"></div>
+    </div>
+    <div class="timer"><div class="tfill" id="fin-time"></div></div>
+  </div>
+</div>
+<div id="result" class="result hidden"></div>
+<script src="sound.js"></script>
+<script src="finisher.js"></script>
+</body>
+</html>

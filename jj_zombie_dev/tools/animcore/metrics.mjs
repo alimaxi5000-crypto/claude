@@ -1,7 +1,7 @@
 // Automatic animation quality measurements. Shared by the build (pass/fail thresholds) and
 // the browser lab (live red/green display). All inputs are solved frames (see scene.mjs).
 
-import { vsub, vlen, vdot, vnorm, vcross, vadd, vscale, qangle, qmul, qconj, qrot, qnorm, DEG, clamp } from './math.mjs';
+import { vsub, vlen, vdot, vnorm, vcross, vadd, vscale, qangle, qmul, qconj, qrot, qnorm, qtwist, DEG, clamp } from './math.mjs';
 import { BODY } from './skeleton.mjs';
 
 export const DEFAULT_LIMITS = {
@@ -16,7 +16,8 @@ export const DEFAULT_LIMITS = {
   kneeHyper: 4,
   neck: 85,               // deg head+neck relative to chest
   spineSeg: 38,           // deg per spine segment
-  wrist: 88,              // deg wrist relative to forearm
+  wrist: 88,              // deg wrist bend relative to the forearm
+  wristRoll: 120,         // deg wrist roll (pronation/supination) relative to the forearm
   penetration: 0.035,     // m capsule penetration between actors
   selfPenetration: 0.03,  // m own forearm/hand vs own torso
   contact: 0.07,          // m default max distance for declared contacts
@@ -76,6 +77,16 @@ export function segDist(p1, q1, p2, q2) {
 const worst = () => ({ value: 0, frame: -1, detail: '' });
 const upd = (w, v, f, d = '') => { if (v > w.value) { w.value = v; w.frame = f; w.detail = d; } };
 
+// Contact points of a foot in world space: heel (rest offset from the ankle) and toe joint.
+const HEEL_OFF = [0, -0.05, -0.085];
+const CONTACT_H = { heel: 0.0, toe: 0.035 };
+function contactPoints(skel, sol, ft) {
+  const q = qnorm(qmul(sol.mover.q, sol.D[ft.ankle]));
+  const out = { heel: vadd(sol.world.P[ft.ankle], qrot(q, HEEL_OFF)) };
+  if (ft.toe >= 0) out.toe = sol.world.P[ft.toe];
+  return out;
+}
+
 // Per-actor clip metrics.
 export function measureActor(skel, frames, opts = {}) {
   const L = { ...DEFAULT_LIMITS, ...(opts.limits || {}) };
@@ -83,7 +94,7 @@ export function measureActor(skel, frames, opts = {}) {
   const n = frames.length;
   const res = {
     footSlide: worst(), groundPen: worst(), floatFeet: worst(), angVel: worst(), linVel: worst(),
-    elbowHyper: worst(), kneeHyper: worst(), neck: worst(), spineSeg: worst(), wrist: worst(),
+    elbowHyper: worst(), kneeHyper: worst(), neck: worst(), spineSeg: worst(), wrist: worst(), wristRoll: worst(),
     selfPenetration: worst(), loopSeam: worst(), loopMover: worst(),
   };
   const ground = skel.groundZ;
@@ -102,18 +113,18 @@ export function measureActor(skel, frames, opts = {}) {
     }
     const airborne = allowAir.some(([a, b]) => f / fps >= a && f / fps <= b);
     if (!airborne && !opts.noGround) upd(res.floatFeet, minH, f, 'lowest foot above ground');
-    // Foot slide (contact = toe or ankle near the ground).
+    // Foot slide, measured at the real contact points: heel (behind/below the ankle) and the
+    // ball of the foot (toe joint). A point counts as planted while it is within 2 cm of the ground.
     if (f > 0 && !opts.noGround) {
       const prev = frames[f - 1];
       for (const ft of feet) {
-        for (const [j, h0] of [[ft.ankle, 0.085], [ft.toe, 0.025]]) {
-          if (j < 0) continue;
-          const h = sol.world.P[j][2] - (gz + h0);
-          const hp = prev.world.P[j][2] - (gz + h0);
-          if (h < 0.03 && hp < 0.03) {
-            const dx = sol.world.P[j][0] - prev.world.P[j][0];
-            const dy = sol.world.P[j][1] - prev.world.P[j][1];
-            upd(res.footSlide, Math.hypot(dx, dy) * fps, f, `${ft.s} ${j === ft.toe ? 'toe' : 'ankle'}`);
+        const cps = contactPoints(skel, sol, ft), cpp = contactPoints(skel, prev, ft);
+        for (const k of Object.keys(cps)) {
+          const h = cps[k][2] - gz - CONTACT_H[k];
+          const hp = cpp[k][2] - (ground + prev.mover.p[2]) - CONTACT_H[k];
+          if (h < 0.02 && hp < 0.02) {
+            const dx = cps[k][0] - cpp[k][0], dy = cps[k][1] - cpp[k][1];
+            upd(res.footSlide, Math.hypot(dx, dy) * fps, f, `${ft.s} ${k}`);
           }
         }
       }
@@ -142,9 +153,15 @@ export function measureActor(skel, frames, opts = {}) {
         const bendSigned = Math.atan2(vdot(vcross(u, w), hinge), vdot(u, w));
         upd(res[key], -bendSigned / DEG, f, `${s}`);
       }
-      // Wrist relative to forearm (delta beyond the forearm's delta).
-      const dRel = qangle(sol.D[skel.idx(S.hand)], sol.D[skel.idx(S.lower)]) / DEG;
-      upd(res.wrist, dRel, f, s);
+      // Wrist relative to the forearm, split into bend (swing) and roll (twist about the forearm
+      // axis). Roll is distributed by the game's forearm roll bones, so it has its own limit.
+      if (arm) {
+        const rel = qnorm(qmul(qconj(sol.D[skel.idx(S.lower)]), sol.D[skel.idx(S.hand)]));
+        const tw = qtwist(rel, arm.dirL);
+        const swing = qnorm(qmul(rel, qconj(tw)));
+        upd(res.wrist, 2 * Math.acos(Math.min(1, Math.abs(swing[3]))) / DEG, f, `${s} bend`);
+        upd(res.wristRoll, 2 * Math.acos(Math.min(1, Math.abs(tw[3]))) / DEG, f, `${s} roll`);
+      }
     }
     // Neck/head relative to chest.
     const chest = skel.has('SKEL_Spine3') ? skel.idx('SKEL_Spine3') : skel.idx(BODY.root);

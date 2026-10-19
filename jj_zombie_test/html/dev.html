@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>jj_zombie_test NUI-Vorschau</title>
+<link rel="stylesheet" href="finisher.css">
+<style>
+  /* Preview only: fake game background and a control panel. Not used in game. */
+  html, body { background: #3b4048 linear-gradient(160deg, #4a5360, #22262c) fixed; }
+  #dev { position: fixed; left: 12px; top: 12px; width: 280px; background: rgba(0,0,0,.72); padding: 10px 12px; border-radius: 8px; font: 13px system-ui; color: #ddd; z-index: 10; }
+  #dev h1 { font-size: 14px; margin: 0 0 8px; }
+  #dev button { margin: 2px; padding: 4px 8px; background: #2c3138; color: #eee; border: 1px solid #555; border-radius: 4px; cursor: pointer; }
+  #dev label { display: block; margin: 6px 0 2px; }
+  #dev input[type=range] { width: 100%; }
+</style>
+</head>
+<body>
+<div id="dev">
+  <h1>NUI-Vorschau (Browser)</h1>
+  <button id="b-open">Öffnen</button><button id="b-close">Schließen</button>
+  <label>Fortschritt <span id="v-prog">30</span>%</label>
+  <input id="r-prog" type="range" min="0" max="100" value="30">
+  <button id="b-press">E drücken</button><button id="b-auto">Auto-Spiel 7 s</button>
+  <br><button id="b-win">Erfolg</button><button id="b-bite">Biss</button>
+  <label>Sounds</label>
+  <div id="sfx"></div>
+  <button id="b-hb">Herzschlag an/aus</button><button id="b-br">Atmen an/aus</button><button id="b-st">Ringen an/aus</button>
+  <label>Position</label>
+  <button id="b-bottom">unten</button><button id="b-center">mittig</button>
+</div>
+<div id="fin" class="fin hidden" aria-live="polite">
+  <div class="fin-key"><span class="ring"></span><span class="cap" id="fin-key">E</span></div>
+  <div class="fin-body">
+    <div class="fin-row"><span class="fin-text" id="fin-text"></span><span class="fin-press" id="fin-press"></span></div>
+    <div class="bar"><div class="fill" id="fin-fill"></div><div class="mark" id="mark-low"></div><div class="mark" id="mark-high"></div></div>
+    <div class="timer"><div class="tfill" id="fin-time"></div></div>
+  </div>
+</div>
+<div id="result" class="result hidden"></div>
+<script src="sound.js"></script>
+<script src="finisher.js"></script>
+<script>
+  // Mock "Lua": posts the same messages the client sends in game.
+  const post = (m) => window.postMessage(m, '*');
+  const q = (id) => document.getElementById(id);
+  const ui = { Position: 'bottom', AccentColor: '#e8e8e8', DangerColor: '#d9453d' };
+  const open = () => post({ type: 'fin:open', key: 'E', progress: +q('r-prog').value, timeLimit: 7, text: { press: 'DRÜCKEN', push: 'Drück ihn weg!' }, ui, thresholds: { ZombieWinsBelow: 35, PlayerWinsAbove: 70 } });
+  q('b-open').onclick = open;
+  q('b-close').onclick = () => post({ type: 'fin:close' });
+  q('r-prog').oninput = (e) => { q('v-prog').textContent = e.target.value; post({ type: 'fin:progress', value: +e.target.value }); };
+  q('b-press').onclick = () => post({ type: 'fin:press' });
+  q('b-win').onclick = () => post({ type: 'fin:result', result: 'success', text: 'Losgerissen' });
+  q('b-bite').onclick = () => post({ type: 'fin:result', result: 'bite', text: 'Gebissen!' });
+  q('b-bottom').onclick = () => { ui.Position = 'bottom'; open(); };
+  q('b-center').onclick = () => { ui.Position = 'center'; open(); };
+  for (const n of ['growl', 'roar', 'grab', 'snap', 'shove', 'punch', 'bite', 'swipe', 'gasp']) {
+    const b = document.createElement('button'); b.textContent = n;
+    b.onclick = () => post({ type: 'sfx', name: n, volume: 0.9, pitch: 1 });
+    q('sfx').append(b);
+  }
+  const tog = {};
+  for (const [id, name] of [['b-hb', 'heartbeat'], ['b-br', 'breath'], ['b-st', 'struggle']]) {
+    q(id).onclick = () => { tog[name] = !tog[name]; post({ type: 'loop', name, on: tog[name], intensity: 0.7, volume: 0.8 }); };
+  }
+  // Simulated struggle: progress with decay and presses, like the server model.
+  q('b-auto').onclick = () => {
+    open();
+    let p = 30, t = 0;
+    const iv = setInterval(() => {
+      t += 100; p = Math.max(0, p - 1.1);
+      if (Math.random() < 0.85) { p = Math.min(100, p + 6.5 * 0.9); post({ type: 'fin:press' }); }
+      post({ type: 'fin:progress', value: p, danger: 1 - p / 100 });
+      post({ type: 'fin:time', remainingMs: 7000 - t });
+      if (p >= 100 || t >= 7000) {
+        clearInterval(iv);
+        post(p >= 100 ? { type: 'fin:result', result: 'success', text: 'Losgerissen' } : { type: 'fin:result', result: 'bite', text: 'Gebissen!' });
+      }
+    }, 100);
+  };
+  if (location.hash === '#open') open();
+</script>
+</body>
+</html>

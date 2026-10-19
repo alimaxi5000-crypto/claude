@@ -10,7 +10,7 @@ import zlib from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { loadSkeletons, DEV } from './skeletons.mjs';
-import { sampleScene, FPS } from './animcore/scene.mjs';
+import { sampleScene, setAlignment, FPS } from './animcore/scene.mjs';
 import { animatedBoneNames } from './animcore/skeleton.mjs';
 import { dictionaryXml, continuous } from './animcore/ycdxml.mjs';
 import { parseYcd } from './animcore/ycdreader.mjs';
@@ -35,6 +35,8 @@ const fail = (msg) => { problems.push(msg); console.error('  FAIL ' + msg); };
 
 // ------------------------------------------------------------------ load
 const { skeletons, info: skelInfo } = loadSkeletons();
+const ALIGN_FILE = path.join(DEV, 'anims-src', 'align.json');
+setAlignment(fs.existsSync(ALIGN_FILE) ? JSON.parse(fs.readFileSync(ALIGN_FILE, 'utf8')) : {});
 const files = fs.readdirSync(SRC_DIR).filter((f) => f.endsWith('.mjs')).sort();
 const sources = [];
 for (const f of files) {
@@ -124,6 +126,18 @@ log(`sampled ${exportClips.length} clips from ${sources.length} sources in ${Dat
 // Declared transitions (pose continuity between consecutive clips of a sequence).
 const blends = [];
 for (const [key, { src, variant, sampled }] of sampledByKey) {
+  // leadsTo: this clip's last frame must match the first frame of each listed clip.
+  for (const next of (src.leadsTo ? src.leadsTo(variant) : [])) {
+    const nextKey = `${next.name}:${next.variant ?? ''}`;
+    const nx = sampledByKey.get(nextKey);
+    if (!nx) { if (!only) fail(`${key}: leadsTo unknown ${nextKey}`); continue; }
+    for (const actor of sampled.actors) {
+      if (!nx.sampled.frames[actor]) continue;
+      const m = measureBlend(sampled.skeletons[actor], sampled.frames[actor].at(-1), nx.sampled.frames[actor][0], { ...(src.limits || {}), ...(next.limits || {}) });
+      blends.push({ from: key, to: nextKey, actor, ...m });
+      if (!m.ok) for (const [k, v] of Object.entries(m.items)) if (!v.pass) fail(`blend ${key} -> ${nextKey} (${actor}): ${k} = ${v.value} > ${v.limit} (${v.detail})`);
+    }
+  }
   for (const prevName of src.follows || []) {
     const prevKey = `${prevName}:${variant.followSuffix?.[prevName] ?? variant.suffix ?? ''}`;
     const prev = sampledByKey.get(prevKey);

@@ -104,7 +104,7 @@ async function ycdFrames(clipName) {
 // ------------------------------------------------------------------ state
 const state = {
   sceneName: null, variant: null, source: 'src', t: 0, playing: true, speed: 1, loop: true,
-  show: { capsules: true, names: false, trails: true, axes: true, seam: false, joints: true },
+  show: { capsules: true, names: false, trails: true, axes: true, seam: false, joints: true, follow: true },
   align: {}, // actor -> {dx,dy,dz,dyaw}
   camera: 'orbit', sequence: null,
 };
@@ -284,8 +284,20 @@ function placeCapsule(mesh, a, b) {
 }
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
+// Follow mode: keep the first actor's mover centred (locomotion clips walk out of frame
+// otherwise). The ground grid moves instead, which also shows the speed.
+function applyFollow(t) {
+  world.position.set(0, 0, 0);
+  if (!state.show.follow || !playback) return;
+  const a = playback.actors[0];
+  const e = evalActor(a, t);
+  if (!e) return;
+  world.position.set(-e.sol.mover.p[0], 0, e.sol.mover.p[1]);
+}
+
 let lastPoses = {};
 function updateActors(t) {
+  applyFollow(t);
   lastPoses = {};
   for (const [actor, vis] of Object.entries(actorVis)) {
     const e = evalActor(actor, t);

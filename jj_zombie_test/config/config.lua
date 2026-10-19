@@ -134,6 +134,8 @@ Config.Effects = {
     SlowMotion = true,           -- Short slow motion at the shove impact.
     SlowMotionScale = 0.35,
     SlowMotionMs = 220,
+    CustomGetup = true,          -- Zombie gets up with the custom get-up clips after being knocked down.
+                                 -- false = GTA's own physical get-up.
 }
 Config.Camera = {
     Enabled = true,              -- Scripted close camera during the finisher.

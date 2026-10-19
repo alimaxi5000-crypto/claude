@@ -56,7 +56,17 @@ Locales.de = {
     help_testanim = 'Eigene Test-Animation abspielen (bob | face | wave | stop)',
     help_tune = 'Konstante live ändern',
     keymap_struggle = 'Zombie: Wegdrücken (Finisher)',
-    keymap_cam = 'Zombie-Debugkamera: Ansicht wechseln',
+    debug_scene = 'Szene %s  %s  p=%.0f',
+    debug_neck = 'Hals %.0f cm',
+    debug_summary = 'jj_zombie debug: %d Zombies sichtbar, %d mit Besitz bei dir, KI %s',
+    debug_ai_paused = 'PAUSIERT',
+    debug_ai_active = 'aktiv',
+    align_mode = '/zalign  Modus: %s  (Tab wechselt)',
+    align_mode_zombie = 'Zombie relativ zu dir',
+    align_mode_scene = 'ganze Szene (Laufzeit)',
+    align_help = 'Pfeile X/Y · Bild auf/ab Z · Q/E Drehung · Shift fein · Enter speichern · Rücktaste abbrechen',
+    align_saved = 'Zombie-Versatz x=%.3f y=%.3f z=%.3f yaw=%.2f (an den Entwickler geben)',
+    cam_help = '/zcam  WASD fliegen · Maus schauen · Q/E hoch/runter · Shift schnell · 1-4 feste Ansichten · Rücktaste beenden',
 }
 
 Locales.en = {
@@ -113,7 +123,17 @@ Locales.en = {
     help_testanim = 'Play a custom test animation (bob | face | wave | stop)',
     help_tune = 'Change a constant live',
     keymap_struggle = 'Zombie: push away (finisher)',
-    keymap_cam = 'Zombie debug camera: next view',
+    debug_scene = 'scene %s  %s  p=%.0f',
+    debug_neck = 'neck %.0f cm',
+    debug_summary = 'jj_zombie debug: %d zombies visible, %d owned by you, AI %s',
+    debug_ai_paused = 'PAUSED',
+    debug_ai_active = 'running',
+    align_mode = '/zalign  mode: %s  (Tab switches)',
+    align_mode_zombie = 'zombie relative to you',
+    align_mode_scene = 'whole scene (runtime)',
+    align_help = 'Arrows X/Y · Page up/down Z · Q/E rotate · Shift fine · Enter save · Backspace cancel',
+    align_saved = 'Zombie offset x=%.3f y=%.3f z=%.3f yaw=%.2f (send to the developer)',
+    cam_help = '/zcam  WASD fly · mouse look · Q/E up/down · Shift fast · 1-4 fixed views · Backspace exit',
 }
 
 -- Translate a key with optional string.format arguments. Missing keys fall back to German,

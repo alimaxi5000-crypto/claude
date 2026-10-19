@@ -24,6 +24,12 @@ server_scripts {
     'config/config_server.lua',
     'integration/server.lua',
     'server/net.lua',
+    'server/ownership.lua',
+    'server/ai_state.lua',
+    'server/zombies.lua',
+    'server/damage.lua',
+    'server/finisher.lua',
+    'server/capture.lua',
     'server/commands.lua',
     'server/boot.lua',
 }
@@ -32,7 +38,24 @@ client_scripts {
     'integration/client.lua',
     'client/anim.lua',
     'client/main.lua',
+    'client/movement.lua',
+    'client/ai.lua',
+    'client/fx.lua',
+    'client/camera.lua',
+    'client/sound.lua',
+    'client/finisher.lua',
+    'client/capture.lua',
+    'client/debug.lua',
     'client/testanim.lua',
+}
+
+ui_page 'html/index.html'
+
+files {
+    'html/index.html',
+    'html/finisher.css',
+    'html/finisher.js',
+    'html/sound.js',
 }
 
 dependencies {

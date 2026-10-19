@@ -13,9 +13,10 @@ JJZ.Events = {
     AnimReport = 'jj_zombie:server:animReport',         -- (result table) /ztestanim result for the server log
     CaptureFrame = 'jj_zombie:server:captureFrame',     -- (sessionId, index) request: take screenshot now
     CaptureDone = 'jj_zombie:server:captureDone',       -- (sessionId)
-    ZombieHit = 'jj_zombie:server:zombieHit',           -- (netId, boneTag, weaponHash) owner-side hit report (advisory)
     AlignResult = 'jj_zombie:server:alignResult',       -- (values) /zalign final values for the server log
     Ready = 'jj_zombie:server:ready',                   -- client finished loading (suggestions, settings)
+    SpawnPoints = 'jj_zombie:server:spawnPoints',       -- (reqId, points[]) validated spawn points from the requester
+    ZombieInit = 'jj_zombie:server:zombieInit',         -- (netId) owner applied the initial ped setup
 
     -- server -> client
     Notify = 'jj_zombie:client:notify',
@@ -32,7 +33,10 @@ JJZ.Events = {
     StartAlign = 'jj_zombie:client:startAlign',
     TestAnim = 'jj_zombie:client:testAnim',
     CaptureStart = 'jj_zombie:client:captureStart',
+    CaptureAck = 'jj_zombie:client:captureAck',         -- (sessionId, index, ok) screenshot stored
     TuneSync = 'jj_zombie:client:tuneSync',             -- live tuning values (broadcast)
+    FindSpawn = 'jj_zombie:client:findSpawn',           -- (reqId, count, params) ask the requester for spawn points
+    ZombieCmd = 'jj_zombie:client:zombieCmd',           -- (netId, cmd) owner-side command (kill, unstuck)
 }
 
 -- Server-internal (AddEventHandler only, never networked)
@@ -52,6 +56,11 @@ JJZ.State = {
     Seed = 'jjz_seed',       -- per-zombie random seed (visual variation)
     Frozen = 'jjz_frozen',   -- global AI pause flag (GlobalState)
     StunUntil = 'jjz_stun',  -- server time (ms) until which the zombie is stunned
+    Speed = 'jjz_speed',     -- 'walk' | 'run' (laeufer sprint cycle)
+    Slot = 'jjz_slot',       -- approach/hold angle around the target (degrees)
+    Init = 'jjz_init',       -- initial ped setup (health, variation) done
+    Unstuck = 'jjz_unstuck', -- counter, incremented by the server when stuck
+    Home = 'jjz_home',       -- spawn position (vector3) for idle wandering
 }
 -- Player state bag keys (server-set).
 JJZ.PlayerState = {
@@ -65,6 +74,7 @@ JJZ.AiState = {
     Chase = 'chase',         -- follows the target
     Ready = 'ready',         -- close, ready to grab
     Grab = 'grab',           -- in a finisher
+    Hold = 'hold',           -- waits at a distance while the target is grabbed by another zombie
     Stunned = 'stunned',     -- knocked back / getting up
     Dead = 'dead',
 }

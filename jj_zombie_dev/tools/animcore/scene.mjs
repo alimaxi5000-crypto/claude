@@ -48,6 +48,17 @@ class Ctx {
 // Resolve a scene source + variant into per-actor frame arrays.
 // source: { name, dict, duration, loop, actors: {role: skeletonKey}, pose(t, ctx) }
 // skeletons: { key -> Skeleton }, variant: { suffix, skel: {role: key}, ... }
+// Alignment offsets (anims-src/align.json, exported by the lab or /zalign):
+// { "<scene>": { "<variant>" | "*": { "<actor>": { dx, dy, dz, dyaw (deg) } } } }
+// They shift an actor's mover before solving, so IK contacts are kept.
+let ALIGN = null;
+export function setAlignment(a) { ALIGN = a || {}; }
+function alignFor(name, variant, actor) {
+  const s = ALIGN?.[name];
+  if (!s) return null;
+  return s[variant?.suffix || '']?.[actor] ?? s['*']?.[actor] ?? null;
+}
+
 export function sampleScene(source, variant, skeletons) {
   const actors = Object.keys(source.actors);
   const skelFor = {};
@@ -70,7 +81,12 @@ export function sampleScene(source, variant, skeletons) {
       const poses = source.pose(t, ctx);
       sols = {};
       for (const a of actors) {
-        const pose = actors.length === 1 && !poses[a] ? poses : poses[a];
+        let pose = actors.length === 1 && !poses[a] ? poses : poses[a];
+        const al = alignFor(source.name, variant, a);
+        if (al && pose) {
+          const m = pose.mover || { p: [0, 0, 0], yaw: 0 };
+          pose = { ...pose, mover: { p: [m.p[0] + (al.dx || 0), m.p[1] + (al.dy || 0), m.p[2] + (al.dz || 0)], yaw: (m.yaw || 0) + (al.dyaw || 0) * Math.PI / 180 } };
+        }
         const sol = rigs[a].solve(pose || {});
         sol.world = worldOf(sol);
         sols[a] = sol;

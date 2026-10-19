@@ -241,7 +241,12 @@ export class Rig {
     const d = this.side[sd];
     const arm = d.arm;
     const S = P[d.upperI];
-    const T = spec.space === 'body' ? spec.target : toBody(spec.target);
+    // Target spaces: 'scene' (default), 'body' (entity frame), 'shoulder' (offset from the posed
+    // shoulder joint, in body axes - independent of the torso posture).
+    const resolve = (target, space) => (space === 'body' ? target : space === 'shoulder' ? vadd(S, target) : toBody(target));
+    let T = resolve(spec.target, spec.space);
+    // Optional cross-fade to a second target (possibly in another space) without popping.
+    if (spec.blend && (spec.blend.w ?? 0) > 0) T = vlerp(T, resolve(spec.blend.target, spec.blend.space), Math.min(1, spec.blend.w));
     const sx = sd === 'R' ? 1 : -1;
     const pole = spec.pole ? (spec.poleSpace === 'scene' ? dirToBody(spec.pole) : spec.pole) : [sx * 0.45, -0.75, -0.5];
     const r = this._twoBone(S, T, arm.l1, arm.l2, pole, spec.reach ?? 0.995);
@@ -257,7 +262,26 @@ export class Rig {
     const d = this.side[sd];
     const leg = d.leg;
     const S = P[d.thighI];
-    const T = spec.space === 'body' ? spec.target : toBody(spec.target);
+    let T = spec.space === 'body' ? spec.target : toBody(spec.target);
+    if (spec.pivot) {
+      // Exact heel/toe roll: the given ground point stays fixed and the ankle is derived from
+      // the foot orientation and the skeleton's real foot geometry.
+      const pv = spec.pivot;
+      const pt = spec.space === 'body' ? [pv.x, pv.y, 0] : toBody([pv.x, pv.y, 0]);
+      const Df = this._footDelta(sd, spec, pD, mover);
+      const foot = this.skel.restP[d.footI];
+      let off, h;
+      if (pv.kind === 'toe' && d.toeI >= 0) {
+        const toe = this.skel.restP[d.toeI];
+        off = vsub(toe, foot);
+        h = toe[2] - this.skel.groundZ;
+      } else {
+        off = [0, -0.05, -(foot[2] - this.skel.groundZ)];
+        h = 0;
+      }
+      const point = [pt[0], pt[1], this.skel.groundZ + h + (pv.z || 0)];
+      T = vsub(point, qrot(Df, off));
+    }
     const sx = sd === 'R' ? 1 : -1;
     let pole = spec.pole;
     if (!pole) {

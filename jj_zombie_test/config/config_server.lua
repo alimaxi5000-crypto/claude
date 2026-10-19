@@ -15,8 +15,7 @@ ConfigServer.Input = {
     MaxClockSkewMs = 400,        -- Client timestamps may lead the server clock by at most this.
     RegularityWindow = 16,       -- Presses used to detect autoclickers (too regular intervals).
     RegularityStdDevMs = 2.5,    -- Std-dev below this over the window = machine-like input.
-    OnSuspicious = 'ignore',     -- 'ignore' (drop presses), 'log', 'kick'
-    BatchRate = 15,              -- Max input batches per second per player before rate limiting.
+    OnSuspicious = 'ignore',     -- 'ignore' (stop counting presses), 'log' (count, but log), 'kick'
 }
 
 -- ============================================================
@@ -24,8 +23,9 @@ ConfigServer.Input = {
 -- ============================================================
 ConfigServer.RateLimit = {
     Commands = { max = 6, perMs = 3000 },      -- test commands
+    Input = { max = 15, perMs = 1000 },        -- finisher key press batches (client sends ~10/s)
     Reports = { max = 8, perMs = 1000 },       -- client reports (space check, events, anim results)
-    CaptureFrames = { max = 30, perMs = 10000 },
+    CaptureFrames = { max = 24, perMs = 5000 },   -- screenshots requested by /zcapture
 }
 
 -- ============================================================
@@ -46,7 +46,7 @@ ConfigServer.Integration = {
 -- ============================================================
 ConfigServer.Capture = {
     Directory = '../../../../../jj_zombie_dev/captures', -- resources/[jj]/jj_zombie_test -> DEVSERVER/jj_zombie_dev/captures
-    MaxFrames = 64,              -- per capture session
+    MaxFrames = 120,             -- per capture session ('all' = 4 scenes x 6 steps x 4 cameras = 96)
     Quality = 0.92,              -- jpg quality for screenshot-basic
 }
 
