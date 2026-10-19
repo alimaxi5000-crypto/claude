@@ -70,6 +70,7 @@ end
 SetTimeout = function(ms, fn) CreateThread(function() Wait(ms); fn() end) end
 
 local function resume(t)
+    M.resumes = (M.resumes or 0) + 1
     local ok, ms = coroutine.resume(t.co)
     if not ok then
         M.errors = M.errors or {}
@@ -138,7 +139,11 @@ function M.fire(name, src, ...)
 end
 function TriggerEvent(name, ...) M.fire(name, nil, ...) end
 function TriggerClientEvent(name, target, ...)
-    M.sent[#M.sent + 1] = { name = name, target = target, args = table.pack(...) }
+    local args = table.pack(...)
+    M.sent[#M.sent + 1] = { name = name, target = target, args = args }
+    M.net.events = M.net.events + 1
+    M.net.eventBytes = M.net.eventBytes + #name + M.sizeOf(args) + 8
+    if #M.sent > 5000 then table.remove(M.sent, 1) end
 end
 TriggerLatentClientEvent = function(name, target, _, ...) TriggerClientEvent(name, target, ...) end
 function M.sentTo(target, name)
@@ -150,15 +155,32 @@ end
 function RegisterCommand(name, fn) M.commands = M.commands or {}; M.commands[name] = fn end
 
 -- ------------------------------------------------------------------ state bags
+-- Rough msgpack size of a value (network volume estimates).
+function M.sizeOf(v)
+    local t = type(v)
+    if t == 'nil' or t == 'boolean' then return 1 end
+    if t == 'number' then return math.type(v) == 'integer' and (v >= -32 and v < 128 and 1 or 5) or 9 end
+    if t == 'string' then return #v + 2 end
+    if t == 'table' then
+        local n = 3
+        for k, x in pairs(v) do n = n + M.sizeOf(k) + M.sizeOf(x) end
+        return n
+    end
+    return 8
+end
+M.net = { events = 0, eventBytes = 0, bagSets = 0, bagBytes = 0 }
 local function newBag()
     local data = {}
     local bag = {}
     return setmetatable(bag, {
         __index = function(_, k)
-            if k == 'set' then return function(_, key, value) data[key] = value end end
+            if k == 'set' then return function(_, key, value, rep)
+                data[key] = value
+                if rep then M.net.bagSets = M.net.bagSets + 1; M.net.bagBytes = M.net.bagBytes + M.sizeOf(key) + M.sizeOf(value) + 8 end
+            end end
             return data[k]
         end,
-        __newindex = function(_, k, v) data[k] = v end,
+        __newindex = function(_, k, v) data[k] = v; M.net.bagSets = M.net.bagSets + 1; M.net.bagBytes = M.net.bagBytes + M.sizeOf(k) + M.sizeOf(v) + 8 end,
     })
 end
 local playerBags, entityBags = {}, {}

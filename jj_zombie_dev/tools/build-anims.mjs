@@ -262,6 +262,7 @@ const report = {
   blends, readback, problems,
 };
 fs.writeFileSync(path.join(BUILD, 'report.json'), JSON.stringify(report, null, 1));
+fs.writeFileSync(path.join(BUILD, 'registry.json'), JSON.stringify(luaData, null, 1));
 if (!only) {
   const { writeLabData } = await import('./labdata.mjs');
   writeLabData({ skeletons, scenes, exportClips, sampledByKey, report, dicts, streamDir: OUT_STREAM });

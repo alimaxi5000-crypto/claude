@@ -19,7 +19,7 @@ try { ({ chromium } = require('playwright')); } catch {
 if (!chromium) { console.error('playwright not available'); process.exit(2); }
 fs.mkdirSync(OUT, { recursive: true });
 
-const RESOLUTIONS = [[1280, 720], [1920, 1080], [2560, 1440], [3840, 2160]];
+const RESOLUTIONS = [[1366, 768], [1920, 1080], [2560, 1440], [3440, 1440], [3840, 2160]];
 const STATES = [
   { name: 'struggle', msgs: [{ type: 'fin:open', key: 'E', progress: 55, timeLimit: 7, text: { press: 'DRÜCKEN', push: 'Drück ihn weg!' }, ui: { Position: 'bottom' }, thresholds: { ZombieWinsBelow: 35, PlayerWinsAbove: 70 } }, { type: 'fin:time', remainingMs: 4200 }] },
   { name: 'danger', msgs: [{ type: 'fin:open', key: 'E', progress: 12, timeLimit: 7, text: { press: 'DRÜCKEN', push: 'Drück ihn weg!' }, ui: { Position: 'bottom' }, thresholds: { ZombieWinsBelow: 35, PlayerWinsAbove: 70 } }, { type: 'fin:progress', value: 12, danger: 0.88 }, { type: 'fin:time', remainingMs: 1100 }] },

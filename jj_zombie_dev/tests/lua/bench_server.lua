@@ -15,6 +15,8 @@ local function bench(nZombies, nPlayers)
     M.advance(2000, 100)
     for i = 1, nPlayers do M.addPlayer(i, { pos = vector3(i * 40.0, 0, 30) }) end
     local rnd = JJZ.U.rng(nZombies)
+    collectgarbage('collect')
+    local memBefore = collectgarbage('count')
     for i = 1, nZombies do
         local owner = (i % nPlayers) + 1
         local base = M.entities[M.players[owner].ped].pos
@@ -23,9 +25,15 @@ local function bench(nZombies, nPlayers)
         M.entities[z.ent].health = JJZ.Zombies.HEALTH_BASE + 300
         z.inited = true
     end
+    collectgarbage('collect')
+    local perZombieKB = (collectgarbage('count') - memBefore) / nZombies
+    if not asJson then M.print(('%3d zombies: server-side state ~%.2f KB per zombie (Lua tables incl. mock entity)'):format(nZombies, perZombieKB)) end
     JJZ.Zombies.setFrozen(false)
     M.advance(3000, 50) -- warm up (targets, primaries, slots)
     local ticks = 0
+    collectgarbage('collect')
+    local mem0 = collectgarbage('count')
+    local net0 = { events = M.net.events, eventBytes = M.net.eventBytes, bagSets = M.net.bagSets, bagBytes = M.net.bagBytes }
     local t0 = os.clock()
     local simMs = 20000
     local stop = M.now + simMs
@@ -41,10 +49,18 @@ local function bench(nZombies, nPlayers)
     local cpu = (os.clock() - t0) * 1000
     -- The zombie thread ticks every 250 ms (100 ms when someone is about to be grabbed).
     local zombieTicks = simMs / 250
-    local r = { zombies = nZombies, players = nPlayers, msPerTick = cpu / zombieTicks, msPerSecond = cpu / (simMs / 1000) }
+    local secs = simMs / 1000
+    collectgarbage('collect')
+    local r = {
+        zombies = nZombies, players = nPlayers, msPerTick = cpu / zombieTicks, msPerSecond = cpu / secs,
+        memKB = collectgarbage('count') - mem0 + 0.0,
+        bagSetsPerSec = (M.net.bagSets - net0.bagSets) / secs, bagBytesPerSec = (M.net.bagBytes - net0.bagBytes) / secs,
+        eventsPerSec = (M.net.events - net0.events) / secs, eventBytesPerSec = (M.net.eventBytes - net0.eventBytes) / secs,
+    }
     results[#results + 1] = r
     if not asJson then
-        M.print(('%3d zombies, %2d players: %.3f ms per AI tick, %.2f ms CPU per second (incl. mock overhead)'):format(nZombies, nPlayers, r.msPerTick, r.msPerSecond))
+        M.print(('%3d zombies, %2d players: %.3f ms per AI tick, %.2f ms CPU/s; state bag updates %.1f/s (~%.0f B/s), client events %.1f/s (~%.0f B/s)'):format(
+            nZombies, nPlayers, r.msPerTick, r.msPerSecond, r.bagSetsPerSec, r.bagBytesPerSec, r.eventsPerSec, r.eventBytesPerSec))
     end
 end
 

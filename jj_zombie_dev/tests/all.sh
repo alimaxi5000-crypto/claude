@@ -40,6 +40,14 @@ lua_syntax() {
 }
 command -v luac5.4 >/dev/null && step lua_syntax lua_syntax || skip lua_syntax "luac5.4 missing"
 
+# 1b. JavaScript syntax (NUI, lab, tools, tests).
+js_syntax() {
+  local n=0
+  while IFS= read -r f; do node --check "$f" || return 1; n=$((n + 1)); done < <(find "$RES/html" "$DEV/tools" "$DEV/tests" "$DEV/animlab/src" "$DEV/anims-src" \( -name '*.js' -o -name '*.mjs' \) -not -path '*/node_modules/*' -not -path '*/vendor/*')
+  echo "JS syntax OK ($n files)"
+}
+step js_syntax js_syntax
+
 # 2. Natives: exist, legal on the file's side, argument count.
 if [ -d "$DEV/tools/vendor/fivem-ref/natives" ]; then step natives node "$DEV/tools/check-natives.mjs"
 else skip natives "run tools/setup.sh (native references)"; fi
@@ -50,12 +58,14 @@ step consistency node "$HERE/consistency.mjs"
 # 4. Server logic with mocked natives (flows, aborts, input validation, fuzz).
 step server_logic lua5.4 "$HERE/lua/test_server.lua" "$RES"
 
-# 5. Server benchmark (10 / 30 / 100 zombies).
-step benchmark lua5.4 "$HERE/lua/bench_server.lua" "$RES"
+# 5. Benchmarks (server manager and client manager with 0 / 10 / 30 / 100 zombies).
+step bench_server lua5.4 "$HERE/lua/bench_server.lua" "$RES"
+step bench_client lua5.4 "$HERE/lua/bench_client.lua" "$RES"
 
 # 6. Animations: metrics for every clip (+ YCD conversion and independent read-back).
 if [ $QUICK -eq 0 ] && [ -f "$DEV/tools/ycdtool/out/ycdtool.dll" ] && command -v dotnet >/dev/null; then
   step animations node "$DEV/tools/build-anims.mjs"
+  step catalog node "$DEV/tools/catalog.mjs"
 else
   step animations node "$DEV/tools/build-anims.mjs" --no-ycd
   [ $QUICK -eq 1 ] || skip ycd_roundtrip "ycdtool not built (tools/setup.sh)"

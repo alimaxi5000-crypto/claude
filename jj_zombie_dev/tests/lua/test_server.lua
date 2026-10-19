@@ -336,6 +336,151 @@ do
     noErrors('aborts')
 end
 
+-- ------------------------------------------------------------------ AI state machine (unit)
+section('AI state machine')
+do
+    local AI = JJZ.AiLogic
+    local cfg = Config.AI
+    local function player(x, y, extra)
+        local p = { valid = true, pos = vector3(x, y, 0), bucket = 0, down = false }
+        for k, v in pairs(extra or {}) do p[k] = v end
+        return p
+    end
+    local function zombie(id, x, y, ztype)
+        return { id = id, pos = vector3(x, y, 0), ai = S.Idle, target = 0, bucket = 0, finId = 0, type = ztype or 'schlurfer', speed = 'walk' }
+    end
+    local function stepAll(zs, players, now, frozen)
+        local prim = AI.primaries(zs, players)
+        AI.assignSlots(zs)
+        local acts = {}
+        for _, z in pairs(zs) do acts[z.id] = AI.step(z, { now = now, cfg = cfg, types = Config.Types, players = players, primaries = prim, frozen = frozen }) end
+        return acts
+    end
+    local t = 0
+    local players = { [1] = player(0, 0) }
+    local z = zombie(1, 0, 30)
+    local zs = { [1] = z }
+    stepAll(zs, players, t)
+    check(z.ai == S.Alerted and z.target == 1, 'idle -> alerted on a player in range', z.ai)
+    t = t + math.floor(cfg.AlertSeconds * 1000) + 10
+    stepAll(zs, players, t)
+    check(z.ai == S.Chase, 'alerted -> chase after the alert time', z.ai)
+    z.pos = vector3(0, cfg.AttackReadyDistance - 0.2, 0); t = t + 100
+    stepAll(zs, players, t)
+    check(z.ai == S.Ready, 'chase -> ready inside the attack distance', z.ai)
+    z.pos = vector3(0, cfg.GrabDistance - 0.05, 0); t = t + 100
+    local acts = stepAll(zs, players, t)
+    check(acts[1] and acts[1].kind == 'grab' and acts[1].target == 1, 'ready -> grab request at ~1 m')
+    z.pos = vector3(0, cfg.GrabDistance - 0.05, cfg.GrabMaxHeightDiff + 0.5); t = t + 100
+    acts = stepAll(zs, players, t)
+    check(acts[1] == nil, 'no grab across a large height difference')
+    -- Second zombie on the same target waits (hold), only the primary may grab.
+    local z2 = zombie(2, 0.5, cfg.AttackReadyDistance + 0.5)
+    z2.target, z2.ai = 1, S.Chase
+    z.pos = vector3(0, 0.9, 0)
+    zs[2] = z2
+    t = t + 100
+    stepAll(zs, players, t)
+    check(z2.ai == S.Hold, 'second zombie holds back', z2.ai)
+    check(z.slot ~= z2.slot, 'zombies get different approach slots')
+    -- While the target is in a finisher, every other zombie holds.
+    players[1].finActive = true
+    z2.pos = vector3(0, 1.5, 0); t = t + 100
+    stepAll(zs, players, t)
+    check(z2.ai == S.Hold, 'hold while the target is in a finisher', z2.ai)
+    players[1].finActive = false
+    zs[2] = nil
+    -- Stuck: no progress while far away -> unstuck counter increases.
+    z.pos = vector3(0, 15, 0); z.ai = S.Chase; z.bestDist = nil; z.lastProgressAt = nil; t = t + 100
+    stepAll(zs, players, t)
+    local before = z.unstuck or 0
+    t = t + math.floor(cfg.StuckSeconds * 1000) + 300
+    stepAll(zs, players, t)
+    check((z.unstuck or 0) == before + 1, 'stuck detection raises the unstuck counter', z.unstuck)
+    -- Target lost: too far, other bucket, down, gone.
+    z.pos = vector3(0, cfg.LoseTargetRadius + 5, 0); t = t + 100
+    stepAll(zs, players, t)
+    check(z.target == 0 and z.ai == S.Idle, 'target dropped beyond LoseTargetRadius', z.ai)
+    z.pos = vector3(0, 10, 0); t = t + 100
+    stepAll(zs, players, t)
+    check(z.target == 1, 're-acquire the target')
+    players[1].bucket = 5; t = t + 100
+    stepAll(zs, players, t)
+    check(z.target == 0, 'other routing bucket = no target')
+    players[1].bucket = 0; players[1].down = true; t = t + 100
+    stepAll(zs, players, t)
+    check(z.target == 0, 'downed player is not chased')
+    players[1].down = false
+    stepAll(zs, players, t + 100)
+    players[1] = nil; t = t + 200
+    stepAll(zs, players, t)
+    check(z.target == 0 and z.ai == S.Idle, 'disconnected target dropped')
+    -- Stunned stays stunned until the time is over; frozen does nothing.
+    players[1] = player(0, 0)
+    z.ai, z.stunUntil, z.target = S.Stunned, t + 1000, 1
+    stepAll(zs, players, t + 500)
+    check(z.ai == S.Stunned, 'stunned until stunUntil')
+    stepAll(zs, players, t + 1100)
+    check(z.ai == S.Chase, 'stunned -> chase afterwards', z.ai)
+    z.ai = S.Idle; z.target = 0
+    stepAll(zs, players, t + 1200, true)
+    check(z.ai == S.Idle and z.target == 0, 'frozen AI does nothing')
+    -- Laeufer: sprint / tired cycle.
+    local r = zombie(3, 0, 20, 'laeufer')
+    local rs = { [3] = r }
+    local tt = 0
+    stepAll(rs, players, tt)
+    check(r.speed == 'run', 'laeufer starts sprinting', r.speed)
+    tt = tt + math.floor((cfg.AlertSeconds + Config.Types.laeufer.SprintSeconds) * 1000) + 300
+    r.pos = vector3(0, 18, 0)
+    stepAll(rs, players, tt)          -- leaves the alerted state
+    stepAll(rs, players, tt + 100)
+    check(r.speed == 'walk', 'laeufer gets tired', r.speed)
+    tt = tt + 100 + math.floor(Config.Types.laeufer.TiredSeconds * 1000) + 100
+    r.pos = vector3(0, 16, 0)
+    stepAll(rs, players, tt)
+    check(r.speed == 'run', 'laeufer sprints again', r.speed)
+end
+
+-- ------------------------------------------------------------------ more finisher edge cases
+section('finisher edge cases')
+reset()
+do
+    -- Victim goes down (health <= 100) during the struggle.
+    M.addPlayer(1, { pos = vector3(0, 0, 30) })
+    local z = makeZombie(1, vector3(0, 1.0, 30))
+    local fin = startFinisher(1, z)
+    M.entities[M.players[1].ped].health = 90
+    M.advance(200, 10)
+    check(fin.phase == P.Ended, 'victim down during the struggle -> aborted', fin.phase)
+    check(#M.sentTo(1, E.FinisherAbort) >= 1, 'abort sent')
+    noErrors('victim down')
+
+    -- Zombie owner changes during the result: the impact is re-armed on the new owner.
+    reset()
+    M.addPlayer(1, { pos = vector3(0, 0, 30) })
+    M.addPlayer(2, { pos = vector3(3, 0, 30) })
+    z = makeZombie(1, vector3(0, 1.0, 30))
+    fin = startFinisher(1, z)
+    M.advance(math.floor(Config.Finisher.TimeLimitSeconds * 1000) + 700, 20)
+    check(fin.phase == P.Bite, 'bite phase', fin.phase)
+    M.entities[z.ent].owner = 2
+    M.advance(120, 10)
+    check(#M.sentTo(2, E.ZombieImpact) >= 1, 'impact re-armed on the new owner after migration')
+    M.advance(4000, 50)
+    noErrors('owner migration')
+
+    -- Resource stop while a finisher runs: player state and inventory lock restored.
+    reset()
+    M.addPlayer(1, { pos = vector3(0, 0, 30) })
+    z = makeZombie(1, vector3(0, 1.0, 30))
+    fin = startFinisher(1, z)
+    M.fire('onResourceStop', nil, 'jj_zombie_test')
+    check(Player(1).state[JJZ.PlayerState.Fin] == 0, 'resource stop clears the player finisher state')
+    check(M.entities[z.ent].exists == false, 'resource stop deletes the zombies')
+    noErrors('resource stop')
+end
+
 -- ------------------------------------------------------------------ AI end to end
 section('AI chase and grab')
 reset()

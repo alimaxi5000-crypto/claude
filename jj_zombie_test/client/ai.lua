@@ -271,7 +271,14 @@ RegisterNetEvent(JJZ.Events.ZombieCmd, function(netId, cmd)
     local info = ZAI.list[ent]
     if not info then scan(); info = ZAI.list[ent] end
     if not info then return end
-    if cmd == 'kill' then ZAI.startDeath(ent, info, false) end
+    if cmd == 'kill' then ZAI.startDeath(ent, info, false)
+    elseif cmd == 'swipe' and not info.dying then
+        -- Blocked-space fallback: a short claw swipe instead of the paired finisher.
+        local tped = targetPed(stateOf(ent))
+        if tped ~= 0 then TaskTurnPedToFaceEntity(ent, tped, 300) end
+        playOnce(ent, 'zreact_swipe', 16 | 32, 6.0)
+        info.resumeAt = GetGameTimer() + 900
+    end
 end)
 
 -- ------------------------------------------------------------------ main thread

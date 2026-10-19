@@ -110,7 +110,7 @@ function clinch(ctx, p = {}) {
     root: { p: [0.0 + (p.zShakeX || 0), -0.04, -0.06], bend: 0.18 + 0.05 * (p.mouth || 0), twist: 0.04 },
     look: { target: mouthAim, weight: 0.75 },
     head: { side: (p.headShake || 0), twist: -0.12 + 0.5 * (p.headShake || 0) },
-    leg: zombieLegs(zY),
+    leg: zombieLegs(CLINCH.zombieY),   // feet stay planted; only the body pushes in and out
     arm: {
       L: { ...zL, pole: [-0.9, 0.0, -0.45], fingers: GRAB },
       R: { ...zR, pole: [0.9, 0.0, -0.45], fingers: GRAB },

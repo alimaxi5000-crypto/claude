@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>jj_zombie /zcapture Kontaktbogen</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font: 14px system-ui, sans-serif; background: #15171b; color: #ddd; }
+  header { padding: 14px 18px; background: #1d2026; border-bottom: 1px solid #2c3038; }
+  h1 { font-size: 16px; margin: 0 0 6px; }
+  #drop { margin: 18px; padding: 28px; border: 2px dashed #3a3f48; border-radius: 10px; text-align: center; }
+  #drop.over { border-color: #8fb4ff; background: #1b2230; }
+  button { padding: 6px 12px; background: #2c3138; color: #eee; border: 1px solid #555; border-radius: 5px; cursor: pointer; }
+  #out { margin: 0 18px 18px; }
+  canvas { max-width: 100%; border: 1px solid #2c3038; }
+  .hint { color: #8a919c; font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>/zcapture Kontaktbogen</h1>
+  <div class="hint">Bilder aus <code>jj_zombie_dev/captures</code> hier hineinziehen (Dateinamen
+  <code>&lt;sitzung&gt;_&lt;nr&gt;_&lt;kamera&gt;.jpg</code>). Zeilen = Zeitpunkte, Spalten = Kameras.
+  Läuft komplett offline, nichts wird hochgeladen.</div>
+</header>
+<div id="drop">Bilder hierher ziehen oder <input id="pick" type="file" accept="image/*" multiple></div>
+<div id="out"></div>
+<script>
+const CAMS = ['front', 'side', 'shoulder', 'wide'];
+const drop = document.getElementById('drop'), out = document.getElementById('out');
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); build([...e.dataTransfer.files]); });
+document.getElementById('pick').addEventListener('change', (e) => build([...e.target.files]));
+
+function load(file) {
+  return new Promise((res) => { const img = new Image(); img.onload = () => res(img); img.onerror = () => res(null); img.src = URL.createObjectURL(file); });
+}
+async function build(files) {
+  // Group by session id; index n -> row floor((n-1)/4), column by camera name.
+  const sessions = {};
+  for (const f of files) {
+    const m = f.name.match(/^(.+)_(\d{3})_([a-z_]+)\.(jpe?g|png)$/i);
+    if (!m) continue;
+    (sessions[m[1]] ||= []).push({ file: f, index: +m[2], cam: m[3] });
+  }
+  out.innerHTML = '';
+  for (const [id, shots] of Object.entries(sessions)) {
+    shots.sort((a, b) => a.index - b.index);
+    const rows = Math.ceil(shots[shots.length - 1].index / CAMS.length);
+    const cw = 400, ch = 225, pad = 26;
+    const c = document.createElement('canvas');
+    c.width = CAMS.length * cw; c.height = rows * ch + pad;
+    const g = c.getContext('2d');
+    g.fillStyle = '#111317'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#e8e8e8'; g.font = 'bold 15px system-ui'; g.fillText(`${id} · ${shots.length} Bilder`, 10, 18);
+    for (const s of shots) {
+      const img = await load(s.file);
+      if (!img) continue;
+      const row = Math.floor((s.index - 1) / CAMS.length);
+      const col = Math.max(0, CAMS.indexOf(s.cam));
+      const x = col * cw, y = pad + row * ch;
+      g.drawImage(img, x, y, cw, ch);
+      g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(x, y, 120, 18);
+      g.fillStyle = '#fff'; g.font = '12px system-ui'; g.fillText(`#${s.index} ${s.cam}`, x + 5, y + 13);
+      g.strokeStyle = '#000'; g.strokeRect(x + 0.5, y + 0.5, cw - 1, ch - 1);
+    }
+    const btn = document.createElement('button');
+    btn.textContent = `${id}_sheet.png speichern`;
+    btn.onclick = () => { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = `${id}_sheet.png`; a.click(); };
+    out.append(btn, document.createElement('br'), c, document.createElement('br'));
+  }
+  if (!Object.keys(sessions).length) out.textContent = 'Keine passenden Dateinamen gefunden.';
+}
+</script>
+</body>
+</html>
