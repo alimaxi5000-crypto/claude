@@ -13,7 +13,7 @@ ConfigServer.Input = {
     MaxPressesPerSecond = 14,    -- Sustained rate cap; presses above it are ignored.
     MaxBatchSize = 6,            -- Max presses per network batch (client sends ~10 batches/s).
     MaxClockSkewMs = 400,        -- Client timestamps may lead the server clock by at most this.
-    RegularityWindow = 16,       -- Presses used to detect autoclickers (too regular intervals).
+    RegularityWindow = 12,       -- Intervals used to detect autoclickers (too regular); shorter than a win (~20 presses).
     RegularityStdDevMs = 2.5,    -- Std-dev below this over the window = machine-like input.
     OnSuspicious = 'ignore',     -- 'ignore' (stop counting presses), 'log' (count, but log), 'kick'
 }

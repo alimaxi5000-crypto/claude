@@ -27,6 +27,21 @@ if [ ! -f "$SZ_FILE" ]; then
 fi
 echo "$SZ_SHA  $SZ_FILE" | sha256sum -c --quiet - || { echo "BoneProperties.xml hash mismatch" >&2; rm -f "$SZ_FILE"; exit 1; }
 echo "reference skeleton ok ($SZ_COMMIT)"
+# Official native references for tools/check-natives.mjs (read locally only, nothing is copied
+# into the resource): citizenfx/natives (no license file) and citizenfx/fivem ext/native-decls +
+# ext/natives (Rockstar Games Creator Platform License), both at pinned commits.
+NAT_COMMIT="3432156872baedaf18421bebb238f511468e6b0a"
+FX_COMMIT="580b25c85d0784992c43313a9136b8d5b6839b0a"
+REF="$VENDOR/fivem-ref"
+mkdir -p "$REF"
+if [ ! -d "$REF/natives/.git" ]; then git clone --quiet --filter=blob:none https://github.com/citizenfx/natives.git "$REF/natives"; fi
+( cd "$REF/natives" && git fetch --quiet origin "$NAT_COMMIT" 2>/dev/null || true; git checkout --quiet "$NAT_COMMIT" )
+if [ ! -d "$REF/fx/.git" ]; then
+  git clone --quiet --filter=blob:none --sparse https://github.com/citizenfx/fivem.git "$REF/fx"
+  ( cd "$REF/fx" && git sparse-checkout set ext/native-decls ext/natives )
+fi
+( cd "$REF/fx" && git fetch --quiet origin "$FX_COMMIT" 2>/dev/null || true; git checkout --quiet "$FX_COMMIT" )
+echo "native references: natives $(cd "$REF/natives" && git rev-parse --short HEAD), fivem $(cd "$REF/fx" && git rev-parse --short HEAD)"
 dotnet build "$HERE/ycdtool/ycdtool.csproj" -c Release -nologo -v quiet -o "$HERE/ycdtool/out"
 ( cd "$HERE" && npm ci --silent --no-audit --no-fund )
 echo "setup done"

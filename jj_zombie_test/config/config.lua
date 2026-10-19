@@ -108,8 +108,10 @@ Config.Finisher = {
     KeyDefault = 'E',            -- Default key (players can rebind it in GTA settings -> Key Bindings -> FiveM).
     TimeLimitSeconds = 7.0,      -- Struggle time limit. Default: 7.0
     StartProgress = 30,          -- Progress (0-100) at the start of the struggle. Default: 30
-    ProgressPerPress = 6.5,      -- Progress per valid key press (before difficulty). Default: 6.5
-    DecayPerSecond = 11.0,       -- Progress lost per second. Default: 11
+    ProgressPerPress = 4.0,      -- Progress per valid key press (before difficulty). Default: 4.0
+    DecayPerSecond = 12.0,       -- Progress lost per second. Default: 12
+    -- Balance: ~8.5 presses/s escapes a schlurfer in ~3 s and a laeufer in ~5 s; 6 presses/s
+    -- barely escapes a schlurfer and loses against a laeufer. Live tuning: /ztune press|decay.
     GraceSeconds = 4.0,          -- No new grab for this long after a finisher ends. Default: 4
     StunSeconds = 3.5,           -- Zombie lies stunned after being shoved away. Default: 3.5
     BiteDamage = 60,             -- Health damage of the bite (player health 200 = full, 100 = dead). Default: 60
@@ -155,6 +157,7 @@ Config.UI = {
     Position = 'bottom',         -- 'bottom' or 'center'
     AccentColor = '#e8e8e8',     -- Progress bar color
     DangerColor = '#d9453d',     -- Color while the zombie is winning
+    Vignette = true,             -- Red screen-edge vignette that grows while the zombie is winning
 }
 
 -- ============================================================

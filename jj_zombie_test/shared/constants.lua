@@ -9,7 +9,6 @@ JJZ.Events = {
     StruggleInput = 'jj_zombie:server:struggleInput',   -- (finId, seq, presses[])
     SpaceReport = 'jj_zombie:server:spaceReport',       -- (ok) grab space around the local player
     FinisherClientState = 'jj_zombie:server:finClient', -- (finId, phase) victim client progress report
-    FinisherEvent = 'jj_zombie:server:finEvent',        -- (finId, eventName) animation event reached on the victim client
     AnimReport = 'jj_zombie:server:animReport',         -- (result table) /ztestanim result for the server log
     CaptureFrame = 'jj_zombie:server:captureFrame',     -- (sessionId, index) request: take screenshot now
     CaptureDone = 'jj_zombie:server:captureDone',       -- (sessionId)

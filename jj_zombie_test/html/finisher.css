@@ -75,6 +75,19 @@ html, body {
 @keyframes resIn { from { opacity: 0; transform: translateX(-50%) scale(1.15); } }
 .result.fade { opacity: 0; transition: opacity 700ms ease-in; }
 
-/* Readable at 1366x768 up to 3440x1440 */
+/* Danger vignette: grows with the zombie's advantage, flashes on the bite (Config.UI.Vignette). */
+.vig {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 50%, rgba(120, 6, 6, 0.34) 80%, rgba(60, 0, 0, 0.7) 100%);
+  transition: opacity 160ms linear;
+}
+.vig.flash { animation: vigFlash 900ms ease-out; }
+@keyframes vigFlash {
+  0% { opacity: 1; background-color: rgba(150, 0, 0, 0.38); }
+  100% { opacity: 0.55; background-color: rgba(150, 0, 0, 0); }
+}
+
+/* Readable at 1366x768 up to 3840x2160 */
 @media (max-height: 800px) { .fin { min-width: 22rem; padding: 0.7rem 1rem; } }
 @media (min-height: 1300px) { html { font-size: 20px; } }
+@media (min-height: 2000px) { html { font-size: 27px; } }

@@ -4,4 +4,5 @@ animlab/data/
 anims-src/skeletons/real/
 captures/*
 !captures/lab/
+!captures/nui/
 !captures/.gitkeep

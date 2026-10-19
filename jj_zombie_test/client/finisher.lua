@@ -230,12 +230,14 @@ local function runVictim(data)
         elseif fin.releaseNow then
             return release(fin, 'done')
         elseif (fin.phase == 'success' or fin.phase == 'bite') and phase >= 0.995 then
-            if fin.phase == 'bite' then
-                if Clips.single('fin_recover', data.gender) then
-                    Anim.play(me, 'fin_recover', data.gender, { flags = 0, blendIn = 4.0 })
-                end
+            local bitten = fin.phase == 'bite'
+            release(fin, 'done')
+            -- The bite holds its last frame, which is exactly the recover clip's first frame, so
+            -- stopping the scene and starting the recover in the same frame is seamless.
+            if bitten and Clips.single('fin_recover', data.gender) then
+                Anim.play(me, 'fin_recover', data.gender, { flags = 0, blendIn = 8.0 })
             end
-            return release(fin, 'done')
+            return
         end
         Wait(0)
     end
@@ -269,7 +271,7 @@ RegisterNetEvent(Events.FinisherResult, function(finId, result)
         ZSound.loop('heartbeat', true, 0.3)
     else
         fin.phase = 'bite'
-        playScene(fin, fin.data.bite, { blendIn = 5.0 })
+        playScene(fin, fin.data.bite, { blendIn = 5.0, hold = true })
         ZSound.loop('heartbeat', true, 1.0)
     end
 end)

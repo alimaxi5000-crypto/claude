@@ -3,7 +3,8 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const fin = $('fin'), fill = $('fin-fill'), timeEl = $('fin-time'), key = document.querySelector('.fin-key');
-  const result = $('result');
+  const result = $('result'), vig = $('vig');
+  let vignette = true;
   let timeLimitMs = 7000;
   let resultTimer = null;
 
@@ -12,6 +13,7 @@
 
   function open(d) {
     if (d.ui) {
+      vignette = d.ui.Vignette !== false;
       if (d.ui.AccentColor) setVar('--accent', d.ui.AccentColor);
       if (d.ui.DangerColor) setVar('--danger', d.ui.DangerColor);
       fin.classList.toggle('center', d.ui.Position === 'center');
@@ -31,7 +33,9 @@
   function progress(d) {
     const v = clamp(Number(d.value) || 0, 0, 100);
     fill.style.width = `${v}%`;
-    fin.classList.toggle('danger', (d.danger ?? 1 - v / 100) > 0.62);
+    const danger = d.danger ?? 1 - v / 100;
+    fin.classList.toggle('danger', danger > 0.62);
+    if (vig) vig.style.opacity = vignette ? String(clamp((danger - 0.35) / 0.65, 0, 1) * 0.95) : '0';
   }
   function time(d) {
     timeEl.style.width = `${clamp((d.remainingMs / timeLimitMs) * 100, 0, 100)}%`;
@@ -44,6 +48,11 @@
     fin.classList.add('hidden');
     result.textContent = d.text || '';
     result.className = `result ${d.result === 'bite' ? 'bite' : 'ok'}`;
+    if (vig) {
+      vig.classList.remove('flash');
+      if (d.result === 'bite' && vignette) { void vig.offsetWidth; vig.classList.add('flash'); vig.style.opacity = '0.55'; }
+      else vig.style.opacity = '0';
+    }
     clearTimeout(resultTimer);
     resultTimer = setTimeout(() => {
       result.classList.add('fade');
@@ -52,6 +61,7 @@
   }
   function close() {
     fin.classList.add('hidden');
+    if (vig) { vig.classList.remove('flash'); vig.style.opacity = '0'; }
   }
 
   const handlers = {
