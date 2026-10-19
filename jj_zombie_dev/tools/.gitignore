@@ -1,0 +1,5 @@
+node_modules/
+vendor/
+ycdtool/out/
+ycdtool/bin/
+ycdtool/obj/

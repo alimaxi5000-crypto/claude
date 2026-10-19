@@ -1,0 +1,891 @@
+{
+ "id": "placeholder_zombie",
+ "model": "u_m_y_zombie_01",
+ "source": "placeholder",
+ "note": "PLACEHOLDER: approximate proportions, not the GTA rest pose. Replace via tools/import-skeleton.mjs.",
+ "calib": {
+  "groundZ": -0.98
+ },
+ "bones": [
+  {
+   "name": "SKEL_ROOT",
+   "tag": 0,
+   "parent": null,
+   "t": [
+    0,
+    0,
+    0
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Pelvis",
+   "tag": 11816,
+   "parent": "SKEL_ROOT",
+   "t": [
+    0,
+    0,
+    0.03
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Spine_Root",
+   "tag": 57597,
+   "parent": "SKEL_ROOT",
+   "t": [
+    0,
+    0,
+    0.03
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Spine0",
+   "tag": 23553,
+   "parent": "SKEL_Spine_Root",
+   "t": [
+    0,
+    -0.005,
+    0.05
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Spine1",
+   "tag": 24816,
+   "parent": "SKEL_Spine0",
+   "t": [
+    0,
+    -0.007,
+    0.11
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Spine2",
+   "tag": 24817,
+   "parent": "SKEL_Spine1",
+   "t": [
+    0,
+    0.002,
+    0.12
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Spine3",
+   "tag": 24818,
+   "parent": "SKEL_Spine2",
+   "t": [
+    0,
+    0.01,
+    0.13
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Neck_1",
+   "tag": 39317,
+   "parent": "SKEL_Spine3",
+   "t": [
+    0,
+    0.012,
+    0.135
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_Head",
+   "tag": 31086,
+   "parent": "SKEL_Neck_1",
+   "t": [
+    0,
+    0.01,
+    0.1
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Thigh",
+   "tag": 58271,
+   "parent": "SKEL_Pelvis",
+   "t": [
+    -0.095,
+    0,
+    -0.06
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Calf",
+   "tag": 63931,
+   "parent": "SKEL_L_Thigh",
+   "t": [
+    0.005,
+    0.012,
+    -0.44
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Foot",
+   "tag": 14201,
+   "parent": "SKEL_L_Calf",
+   "t": [
+    0.005,
+    -0.022,
+    -0.43
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Toe0",
+   "tag": 2108,
+   "parent": "SKEL_L_Foot",
+   "t": [
+    -0.01,
+    0.135,
+    -0.055
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Clavicle",
+   "tag": 64729,
+   "parent": "SKEL_Spine3",
+   "t": [
+    -0.03,
+    0.035,
+    0.09
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_UpperArm",
+   "tag": 45509,
+   "parent": "SKEL_L_Clavicle",
+   "t": [
+    -0.155,
+    -0.04,
+    -0.025
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Forearm",
+   "tag": 61163,
+   "parent": "SKEL_L_UpperArm",
+   "t": [
+    -0.215512,
+    0,
+    -0.194048
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Hand",
+   "tag": 18905,
+   "parent": "SKEL_L_Forearm",
+   "t": [
+    -0.188464,
+    0.026655,
+    -0.169694
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger00",
+   "tag": 26610,
+   "parent": "SKEL_L_Hand",
+   "t": [
+    -0.010447,
+    0.030613,
+    -0.025554
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger01",
+   "tag": 4089,
+   "parent": "SKEL_L_Finger00",
+   "t": [
+    -0.006983,
+    0.032729,
+    -0.025377
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger02",
+   "tag": 4090,
+   "parent": "SKEL_L_Finger01",
+   "t": [
+    -0.005321,
+    0.024937,
+    -0.019335
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger10",
+   "tag": 26611,
+   "parent": "SKEL_L_Hand",
+   "t": [
+    -0.065038,
+    0.031199,
+    -0.058561
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger11",
+   "tag": 4169,
+   "parent": "SKEL_L_Finger10",
+   "t": [
+    -0.032519,
+    0.004599,
+    -0.02928
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger12",
+   "tag": 4170,
+   "parent": "SKEL_L_Finger11",
+   "t": [
+    -0.019216,
+    0.002718,
+    -0.017302
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger20",
+   "tag": 26612,
+   "parent": "SKEL_L_Hand",
+   "t": [
+    -0.067995,
+    0.012617,
+    -0.061223
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger21",
+   "tag": 4185,
+   "parent": "SKEL_L_Finger20",
+   "t": [
+    -0.035476,
+    0.005017,
+    -0.031942
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger22",
+   "tag": 4186,
+   "parent": "SKEL_L_Finger21",
+   "t": [
+    -0.022172,
+    0.003136,
+    -0.019964
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger30",
+   "tag": 26613,
+   "parent": "SKEL_L_Hand",
+   "t": [
+    -0.065038,
+    -0.006801,
+    -0.058561
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger31",
+   "tag": 4137,
+   "parent": "SKEL_L_Finger30",
+   "t": [
+    -0.032519,
+    0.004599,
+    -0.02928
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger32",
+   "tag": 4138,
+   "parent": "SKEL_L_Finger31",
+   "t": [
+    -0.020694,
+    0.002927,
+    -0.018633
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger40",
+   "tag": 26614,
+   "parent": "SKEL_L_Hand",
+   "t": [
+    -0.057788,
+    -0.023638,
+    -0.054723
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger41",
+   "tag": 4153,
+   "parent": "SKEL_L_Finger40",
+   "t": [
+    -0.025129,
+    0.003554,
+    -0.022626
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_L_Finger42",
+   "tag": 4154,
+   "parent": "SKEL_L_Finger41",
+   "t": [
+    -0.015521,
+    0.002195,
+    -0.013975
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Thigh",
+   "tag": 51826,
+   "parent": "SKEL_Pelvis",
+   "t": [
+    0.095,
+    0,
+    -0.06
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Calf",
+   "tag": 36864,
+   "parent": "SKEL_R_Thigh",
+   "t": [
+    -0.005,
+    0.012,
+    -0.44
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Foot",
+   "tag": 52301,
+   "parent": "SKEL_R_Calf",
+   "t": [
+    -0.005,
+    -0.022,
+    -0.43
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Toe0",
+   "tag": 20781,
+   "parent": "SKEL_R_Foot",
+   "t": [
+    0.01,
+    0.135,
+    -0.055
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Clavicle",
+   "tag": 10706,
+   "parent": "SKEL_Spine3",
+   "t": [
+    0.03,
+    0.035,
+    0.09
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_UpperArm",
+   "tag": 40269,
+   "parent": "SKEL_R_Clavicle",
+   "t": [
+    0.155,
+    -0.04,
+    -0.025
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Forearm",
+   "tag": 28252,
+   "parent": "SKEL_R_UpperArm",
+   "t": [
+    0.215512,
+    0,
+    -0.194048
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Hand",
+   "tag": 57005,
+   "parent": "SKEL_R_Forearm",
+   "t": [
+    0.188464,
+    0.026655,
+    -0.169694
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger00",
+   "tag": 58866,
+   "parent": "SKEL_R_Hand",
+   "t": [
+    0.010447,
+    0.030613,
+    -0.025554
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger01",
+   "tag": 64016,
+   "parent": "SKEL_R_Finger00",
+   "t": [
+    0.006983,
+    0.032729,
+    -0.025377
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger02",
+   "tag": 64017,
+   "parent": "SKEL_R_Finger01",
+   "t": [
+    0.005321,
+    0.024937,
+    -0.019335
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger10",
+   "tag": 58867,
+   "parent": "SKEL_R_Hand",
+   "t": [
+    0.065038,
+    0.031199,
+    -0.058561
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger11",
+   "tag": 64096,
+   "parent": "SKEL_R_Finger10",
+   "t": [
+    0.032519,
+    0.004599,
+    -0.02928
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger12",
+   "tag": 64097,
+   "parent": "SKEL_R_Finger11",
+   "t": [
+    0.019216,
+    0.002718,
+    -0.017302
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger20",
+   "tag": 58868,
+   "parent": "SKEL_R_Hand",
+   "t": [
+    0.067995,
+    0.012617,
+    -0.061223
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger21",
+   "tag": 64112,
+   "parent": "SKEL_R_Finger20",
+   "t": [
+    0.035476,
+    0.005017,
+    -0.031942
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger22",
+   "tag": 64113,
+   "parent": "SKEL_R_Finger21",
+   "t": [
+    0.022172,
+    0.003136,
+    -0.019964
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger30",
+   "tag": 58869,
+   "parent": "SKEL_R_Hand",
+   "t": [
+    0.065038,
+    -0.006801,
+    -0.058561
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger31",
+   "tag": 64064,
+   "parent": "SKEL_R_Finger30",
+   "t": [
+    0.032519,
+    0.004599,
+    -0.02928
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger32",
+   "tag": 64065,
+   "parent": "SKEL_R_Finger31",
+   "t": [
+    0.020694,
+    0.002927,
+    -0.018633
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger40",
+   "tag": 58870,
+   "parent": "SKEL_R_Hand",
+   "t": [
+    0.057788,
+    -0.023638,
+    -0.054723
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger41",
+   "tag": 64080,
+   "parent": "SKEL_R_Finger40",
+   "t": [
+    0.025129,
+    0.003554,
+    -0.022626
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  },
+  {
+   "name": "SKEL_R_Finger42",
+   "tag": 64081,
+   "parent": "SKEL_R_Finger41",
+   "t": [
+    0.015521,
+    0.002195,
+    -0.013975
+   ],
+   "r": [
+    0,
+    0,
+    0,
+    1
+   ]
+  }
+ ]
+}
