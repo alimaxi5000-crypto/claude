@@ -1,0 +1,5 @@
+print('local resource loaded')
+RegisterCommand('localtest', function(_, args)
+	print('command localtest got ' .. tostring(args[1]))
+	TriggerServerEvent('local:event', 1)
+end, false)

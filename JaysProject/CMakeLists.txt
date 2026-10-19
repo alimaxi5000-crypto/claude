@@ -33,11 +33,15 @@ add_library(jays_shared STATIC
   shared/src/json_writer.cpp
   shared/src/config.cpp
   shared/src/net.cpp
-  shared/src/protocol.cpp)
+  shared/src/protocol.cpp
+  shared/src/console_input.cpp)
 target_include_directories(jays_shared PUBLIC shared/include)
 target_compile_options(jays_shared PRIVATE ${JAYS_WARNINGS})
 if(WIN32)
   target_link_libraries(jays_shared PUBLIC ws2_32)
+else()
+  find_package(Threads REQUIRED)
+  target_link_libraries(jays_shared PUBLIC Threads::Threads)
 endif()
 
 # --- compatibility: manifest, Lua runtime, resources ------------------------
@@ -72,10 +76,6 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/client/src/main.cpp)
   add_executable(jays-client ${CLIENT_SOURCES})
   target_link_libraries(jays-client PRIVATE jays_compat)
   target_compile_options(jays-client PRIVATE ${JAYS_WARNINGS})
-  if(UNIX)
-    find_package(Threads REQUIRED)
-    target_link_libraries(jays-client PRIVATE Threads::Threads)
-  endif()
 endif()
 
 # --- tests --------------------------------------------------------------------

@@ -373,6 +373,12 @@ int Poll(std::vector<PollEntry>& entries, int timeoutMs)
 	int n = JAYS_POLL(fds.data(), static_cast<unsigned long>(fds.size()), timeoutMs);
 	if (n < 0)
 	{
+#ifndef _WIN32
+		if (errno == EINTR)
+		{
+			return 0; // interrupted by a signal (e.g. Ctrl+C); callers re-check their stop flags
+		}
+#endif
 		return -1;
 	}
 
