@@ -14,6 +14,7 @@ const DESC = {
   smoke_bob: ['Smoke-Test: nur die Root-Position wippt 3 cm.', '/ztestanim bob'],
   smoke_face: ['Smoke-Test: Bindpose, prüft die Blickrichtung (Root-Konvention).', '/ztestanim face'],
   smoke_wave: ['Smoke-Test: rechter Arm winkt.', '/ztestanim wave'],
+  smoke_nod: ['Durchgespieltes Beispiel aus ANIMATION_PIPELINE.md: langsames Kopfnicken.', '/ztestanim nod'],
   zmove_shamble_walk: ['Schlurfer-Gang: vorgebeugt, rechtes Bein schleift, Arme hängen, Kopf pendelt.', 'Bewegung Schlurfer (alternate walk)'],
   zmove_shamble_idle: ['Schlurfer-Stand: Gewichtsverlagerung, Kopfrucken, Fingerzucken.', 'Bewegung Schlurfer (alternate idle)'],
   zmove_runner_walk: ['Läufer-Gang: schneller, aggressiver, Arme halb vorne.', 'Bewegung Läufer (alternate walk)'],
@@ -84,6 +85,9 @@ for (const [name, list] of Object.entries(groups)) {
   if (evs.length) md += `- Events: ${evs.map((e) => `\`${e.name}\` @ ${fmt(e.t)} s`).join(', ')}\n`;
   const actors = Object.entries(first.actors || {}).map(([role, clip]) => `${role}: \`${clip}\``).join(', ');
   md += `- Clips (erste Variante): ${actors}\n`;
+  const norm = (k) => k.replace(/:$/, '');
+  const file = report.scenes.find((s) => norm(s.key) === norm(first.key))?.file;
+  md += `- Herkunft: selbst erstellt, Quelle \`jj_zombie_dev/anims-src/clips/${file || '?'}\` (prozedural auf das Skelett gelöst); Lizenz wie das Projekt. Keine fremden Animationsdaten; die Ruhe-Orientierungen der GTA-Knochen stecken, wie bei jeder GTA-Animation, in den lokalen Rotationen\n`;
   if (first.playback && Object.keys(first.playback).length) md += `- Abspielwerte: ${Object.entries(first.playback).map(([k, v]) => `${k}=${v}`).join(', ')}\n`;
   const w = worstOf(first.key);
   const crit = Object.entries(w).filter(([, v]) => v.limit).sort((a, b) => b[1].r - a[1].r).slice(0, 3);

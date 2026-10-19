@@ -326,7 +326,18 @@ do
     if fin4 then
         M.fire(E.FinisherClientState, 4, fin4.id, 'failed')
         check(fin4.phase == P.Ended, 'client failure -> ended')
+        check(#M.sentTo(4, E.Swipe) >= 1, 'failed start costs a swipe (no free escape)')
     end
+    -- A forged failure report after the scene was confirmed is ignored.
+    M.advance(5000, 50)
+    local zf = makeZombie(4, vector3(100, 8.0, 30))
+    local finF = startFinisher(4, zf)
+    M.fire(E.FinisherClientState, 4, finF.id, 'failed')
+    check(finF.phase == P.Struggle, 'failure report after confirmation ignored', finF.phase)
+    M.fire(E.FinisherClientState, 4, finF.id, 'failed')
+    M.advance(math.floor(Config.Finisher.TimeLimitSeconds * 1000) + 700, 20)
+    check(finF.result == JJZ.Results.Bite, 'forged abort still ends in the bite', finF.result)
+    M.advance(4000, 50)
     -- Busy victim cannot be grabbed twice.
     M.advance(5000, 50)
     local z5, z6 = makeZombie(4, vector3(100, 5, 30)), makeZombie(4, vector3(100, 6, 30))

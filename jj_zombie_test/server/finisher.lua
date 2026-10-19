@@ -234,7 +234,12 @@ RegisterNetEvent(JJZ.Events.FinisherClientState, function(finId, phase)
     local fin = F.byVictim[src]
     if not fin or fin.id ~= finId then return end
     if phase == 'grab' then fin.clientConfirmed = true end
-    if phase == 'failed' then F.finish(fin, JJZ.Results.Aborted, 'client could not start the scene') end
+    -- A failure report only counts before the scene was confirmed. Failing to start costs the
+    -- same as the blocked-space fallback (swipe), so a forged report never avoids the zombie.
+    if phase == 'failed' and not fin.clientConfirmed then
+        JJZ.Damage.swipe(src, fin.z)
+        F.finish(fin, JJZ.Results.Aborted, 'client could not start the scene')
+    end
 end)
 
 -- ------------------------------------------------------------------ results
@@ -308,7 +313,11 @@ local function tickFinisher(fin, t)
     local src = fin.victim
     if not DoesPlayerExist(src) then return F.finish(fin, JJZ.Results.Aborted, 'victim left') end
     local ped = GetPlayerPed(src)
-    if ped == 0 or ped ~= fin.victimPed then return F.finish(fin, JJZ.Results.Aborted, 'victim ped changed') end
+    if ped == 0 or ped ~= fin.victimPed then
+        -- Changing the ped (model swap) must not be a free escape either.
+        if ped ~= 0 and fin.phase ~= P.Success then JJZ.Damage.swipe(src, fin.z) end
+        return F.finish(fin, JJZ.Results.Aborted, 'victim ped changed')
+    end
     local z = fin.z
     if not z or not JJZ.Zombies.get(z.id) or not DoesEntityExist(z.ent) then return F.finish(fin, JJZ.Results.Aborted, 'zombie gone') end
     if t - fin.createdAt > fin.maxDuration then return F.finish(fin, JJZ.Results.Aborted, 'watchdog') end
@@ -316,6 +325,7 @@ local function tickFinisher(fin, t)
         return F.finish(fin, JJZ.Results.Aborted, 'victim down')
     end
     if not fin.clientConfirmed and t - fin.createdAt > 3500 then
+        JJZ.Damage.swipe(src, z)
         return F.finish(fin, JJZ.Results.Aborted, 'victim client did not start the scene')
     end
     -- Re-arm the impact if the zombie changed owner during the result phase.

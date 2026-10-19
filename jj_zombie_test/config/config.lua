@@ -39,7 +39,7 @@ Config.Commands = {
     Capture = 'zcapture',    -- /zcapture [sequence]  scripted finisher with fixed cameras + screenshots
     Cam = 'zcam',            -- /zcam  free debug camera around the scene
     Align = 'zalign',        -- /zalign  live alignment tuning of the finisher scene
-    TestAnim = 'ztestanim',  -- /ztestanim [bob|face|wave|stop] [self]  custom animation smoke test
+    TestAnim = 'ztestanim',  -- /ztestanim [bob|face|wave|nod|stop] [self]  custom animation smoke test
     Tune = 'ztune',          -- /ztune <key> <value>  change a live tuning constant (see Config.Tunable)
 }
 
@@ -66,21 +66,17 @@ Config.Spawn = {
 Config.Types = {
     schlurfer = {
         Health = 260,            -- Ped health (100 = dead). Headshots always kill.
-        MoveRate = 0.85,         -- Animation/movement rate multiplier while chasing.
         ChaseMode = 'walk',      -- 'walk' or 'run'
         GrabStrength = 1.0,      -- Finisher difficulty multiplier (higher = harder to push away).
         BiteDamageMult = 1.0,    -- Multiplier for Config.Finisher.BiteDamage.
-        Scale = { 0.97, 1.03 },  -- Random visual size variation (min, max). 1.0 = normal.
     },
     laeufer = {
         Health = 200,
-        MoveRate = 1.0,
         ChaseMode = 'run',
         SprintSeconds = 5.0,     -- Sprint duration after first sight of the target.
         TiredSeconds = 3.5,      -- Slows down to a walk for this long, then sprints again.
         GrabStrength = 1.35,
         BiteDamageMult = 1.15,
-        Scale = { 0.98, 1.04 },
     },
 }
 Config.DefaultType = 'mixed'     -- Type used when /zspawn has none: 'schlurfer', 'laeufer' or 'mixed'
@@ -94,7 +90,6 @@ Config.AI = {
     AttackReadyDistance = 2.4,   -- Distance at which the zombie gets ready to grab. Default: 2.4
     GrabDistance = 1.0,          -- Distance at which the finisher starts (~1 m). Default: 1.0
     GrabMaxHeightDiff = 0.8,     -- No grab across bigger height differences (stairs, ledges).
-    SeparationRadius = 1.5,      -- Zombies keep this distance from each other. Default: 1.5
     WaitDistance = 2.6,          -- A second zombie waits at this distance while someone is grabbed.
     StuckSeconds = 2.5,          -- No progress for this long = stuck (unstuck routine starts).
     AlertSeconds = 1.2,          -- Alerted reaction (roar) before chasing.

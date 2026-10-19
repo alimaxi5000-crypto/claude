@@ -37,7 +37,6 @@ ConfigServer.Integration = {
     UseJJNeedsStress = true,     -- Needs.addStress(src, amount, reason) / exports.jj_needs:addStress
     UseJJInventoryBlock = true,  -- exports.jj_inventory:setBlocked(src, reason, on)
     UseJJHealthDownState = true, -- read the down/dead state from jj_health (event jj:server:downChanged)
-    DamageMode = 'native',       -- 'native' = victim client applies game damage (jj_health sees it as normal damage)
 }
 
 -- ============================================================

@@ -37,7 +37,7 @@ end)
 -- ------------------------------------------------------------------ /ztestanim
 register('TestAnim', 'help_testanim', { { 'clip', 'help_testanim' } }, function(src, args)
     local which = (args[1] or 'wave'):lower()
-    if which ~= 'bob' and which ~= 'face' and which ~= 'wave' and which ~= 'stop' then which = 'wave' end
+    if which ~= 'bob' and which ~= 'face' and which ~= 'wave' and which ~= 'nod' and which ~= 'stop' then which = 'wave' end
     local onSelf = (args[2] or ''):lower() == 'self'
     TriggerClientEvent(JJZ.Events.TestAnim, src, which, onSelf)
 end)

@@ -86,7 +86,7 @@ for (const src of sources) {
     const sceneEntry = {
       key, name: src.name, variant: variant.suffix || '', dict, duration: +sampled.duration.toFixed(4),
       loop: !!src.loop, actors: {}, events: (typeof src.events === 'function' ? src.events(variant) : src.events) || [], meta: { ...(variant.meta || {}), ...(src.meta || {}) },
-      playback: src.playback || {},
+      playback: src.playback || {}, file: src.file,
       // Metric settings of this clip source, so the lab's live metrics judge exactly like the build.
       checks: {
         limits: src.limits || {}, actorLimits: src.actorLimits || {}, airborne: src.airborne || {}, noGround: !!src.noGround,
@@ -258,7 +258,7 @@ fs.mkdirSync(BUILD, { recursive: true });
 const report = {
   skeletons: skelInfo,
   clips: exportClips.map((c) => ({ dict: c.dict, name: c.name, actor: c.actor, scene: c.scene, frames: c.frames, duration: +c.duration.toFixed(4), loop: c.loop, metrics: c.metrics, readback: c.readback })),
-  scenes: scenes.map((s) => ({ key: s.key, dict: s.dict, duration: s.duration, sceneMetrics: s.sceneMetrics })),
+  scenes: scenes.map((s) => ({ key: s.key, dict: s.dict, duration: s.duration, file: s.file, sceneMetrics: s.sceneMetrics })),
   blends, readback, problems,
 };
 fs.writeFileSync(path.join(BUILD, 'report.json'), JSON.stringify(report, null, 1));

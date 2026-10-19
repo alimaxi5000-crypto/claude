@@ -8,7 +8,7 @@ ClipData = {
             jjz_fin_m = 27,
             jjz_move = 6,
             jjz_react = 10,
-            jjz_test = 3,
+            jjz_test = 4,
         },
         fps = 30,
         skeletons = {
@@ -704,6 +704,23 @@ ClipData = {
             playback = {
                 blendIn = 2,
                 blendOut = -2,
+                flags = 1,
+            },
+            variant = '',
+        },
+        smoke_nod = {
+            actors = {
+                ped = 'smoke_nod',
+            },
+            dict = 'jjz_test',
+            duration = 2,
+            events = {  },
+            loop = true,
+            meta = {},
+            name = 'smoke_nod',
+            playback = {
+                blendIn = 4,
+                blendOut = -4,
                 flags = 1,
             },
             variant = '',

@@ -96,7 +96,7 @@ RegisterNetEvent(JJZ.Events.TestAnim, function(which, onSelf)
         IntegrationC.notify(L('testanim_stopped'))
         return
     end
-    if which ~= 'bob' and which ~= 'face' and which ~= 'wave' then return end
+    if which ~= 'bob' and which ~= 'face' and which ~= 'wave' and which ~= 'nod' then return end
     CreateThread(function() start(which, onSelf == true) end)
 end)
 
