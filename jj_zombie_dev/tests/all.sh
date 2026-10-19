@@ -48,6 +48,13 @@ js_syntax() {
 }
 step js_syntax js_syntax
 
+# 1c. C# (ycdtool) compiles.
+if command -v dotnet >/dev/null && [ -d "$DEV/tools/vendor/CodeWalker" ] && [ $QUICK -eq 0 ]; then
+  step csharp_build dotnet build "$DEV/tools/ycdtool/ycdtool.csproj" -c Release -nologo -v quiet -o "$DEV/tools/ycdtool/out"
+else
+  skip csharp_build "dotnet/CodeWalker missing or --quick"
+fi
+
 # 2. Natives: exist, legal on the file's side, argument count.
 if [ -d "$DEV/tools/vendor/fivem-ref/natives" ]; then step natives node "$DEV/tools/check-natives.mjs"
 else skip natives "run tools/setup.sh (native references)"; fi
