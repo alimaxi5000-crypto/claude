@@ -46,6 +46,12 @@ local function startFinisher(src, z)
     local ok, why = JJZ.Finisher.tryStart(z, src, nil, true)
     check(ok, 'tryStart ok', why)
     local fin = JJZ.Finisher.activeFor(src)
+    check(fin.phase == P.Starting, 'waits for the owner hand-over', fin.phase)
+    local owner = M.entities[z.ent].owner
+    local hold = lastSent(owner, E.ZombieCmd)
+    check(hold and hold.args[2] == 'hold' and hold.args[3] == fin.id, 'owner told to hold the zombie')
+    M.fire(E.ZombieHeld, owner, z.id, fin.id)
+    check(fin.phase == P.Grab and lastSent(src, E.FinisherStart) ~= nil, 'scene starts after the owner confirmed')
     M.fire(E.FinisherClientState, src, fin.id, 'grab')
     M.advance(math.floor(fin.grabDur * 1000) + 60, 10)
     check(fin.phase == P.Struggle, 'struggle phase reached', fin.phase)
@@ -490,6 +496,23 @@ do
     check(Player(1).state[JJZ.PlayerState.Fin] == 0, 'resource stop clears the player finisher state')
     check(M.entities[z.ent].exists == false, 'resource stop deletes the zombies')
     noErrors('resource stop')
+end
+
+-- ------------------------------------------------------------------ owner hand-over
+section('owner hand-over')
+reset()
+do
+    M.addPlayer(1, { pos = vector3(0, 0, 30) })
+    M.addPlayer(2, { pos = vector3(4, 0, 30) })
+    local z = makeZombie(2, vector3(0, 1.0, 30))
+    JJZ.Finisher.tryStart(z, 1, nil, true)
+    local fin = JJZ.Finisher.activeFor(1)
+    check(lastSent(1, E.FinisherStart) == nil, 'victim not started before the hand-over')
+    M.fire(E.ZombieHeld, 1, z.id, fin.id)        -- the victim is not the owner: ignored
+    check(fin.phase == P.Starting, 'hold confirmation from a non-owner ignored', fin.phase)
+    M.advance(450, 10)                           -- owner never answers -> start after the timeout
+    check(fin.phase == P.Grab and lastSent(1, E.FinisherStart) ~= nil, 'start after the hand-over timeout', fin.phase)
+    noErrors('hand-over')
 end
 
 -- ------------------------------------------------------------------ AI end to end

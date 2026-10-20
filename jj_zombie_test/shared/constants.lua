@@ -16,6 +16,7 @@ JJZ.Events = {
     Ready = 'jj_zombie:server:ready',                   -- client finished loading (suggestions, settings)
     SpawnPoints = 'jj_zombie:server:spawnPoints',       -- (reqId, points[]) validated spawn points from the requester
     ZombieInit = 'jj_zombie:server:zombieInit',         -- (netId) owner applied the initial ped setup
+    ZombieHeld = 'jj_zombie:server:zombieHeld',         -- (netId, finId) owner stopped the zombie's own tasks for the finisher
 
     -- server -> client
     Notify = 'jj_zombie:client:notify',

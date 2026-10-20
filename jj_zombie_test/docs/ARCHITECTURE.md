@@ -85,6 +85,7 @@ Schichten:
 ```
 
 - **Start**: Die KI meldet `grab`, dann prüft `canGrab` erneut: Opfer frei, Schonfrist vorbei, nicht im Fahrzeug, nicht am Boden, nicht gefesselt, gleicher Routing-Bucket, Zombie nicht betäubt, kein Ragdoll. Ist kein Platz gemeldet (`SpaceReport`), kommt statt des Finishers ein kurzer **Swipe** mit wenig Schaden.
+- **Übergabe**: Bevor die Szene startet, bekommt der Besitzer-Client des Zombies `hold`: Er stoppt Laufen und Greif-Overlay (`ClearPedTasks`, `ClearPedSecondaryTask`) und bestätigt mit `zombieHeld`. Erst dann (spätestens nach 400 ms) startet das Opfer die Szene. Solange `jjz_fin` gesetzt ist, gibt die Besitzer-KI keine eigenen Tasks aus, sonst würde sie den Zombie aus der Szene reißen.
 - **Richtung**: `chooseDirection` rechnet die Blickrichtung des Opfers relativ zum anrückenden Zombie aus und rundet auf 8 Richtungen (0 = Blick zum Zombie, 4 = Zombie kommt von hinten). Für jede Richtung und jedes Geschlecht gibt es einen eigenen Grab-Clip.
 - **Ende**: Immer `finish()`. Das setzt Stun bzw. Abbruch-Stun, die Schonfrist (`GraceSeconds`), Player-State und Inventarsperre zurück und nimmt die Remote-Szenen-Erlaubnis wieder weg. `finish()` ist idempotent.
 - **Watchdog**: maximale Gesamtdauer aus Grab + Zeitlimit + Ergebnis + 5 s.

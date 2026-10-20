@@ -30,14 +30,15 @@ local function playScene(fin, key, opts)
     if not ok then return false end
     opts = opts or {}
     local o, h = fin.origin, fin.heading
-    local scene = NetworkCreateSynchronisedScene(o.x, o.y, o.z, 0.0, 0.0, h, 2, opts.hold == true, false, 1.0, 0.0, 1.0)
+    local scene = NetworkCreateSynchronisedScene(o.x, o.y, o.z, 0.0, 0.0, h, 2, opts.hold == true, opts.loop == true, 1.0, 0.0, 1.0)
     NetworkAddPedToSynchronisedScene(fin.victim, scene, e.dict, e.actors.victim, opts.blendIn or 8.0, -4.0, VICTIM_FLAGS, 0, opts.moverBlend or 1000.0, 0)
     if DoesEntityExist(fin.zombie) then
         NetworkAddPedToSynchronisedScene(fin.zombie, scene, e.dict, e.actors.zombie, opts.zBlendIn or opts.blendIn or 8.0, -4.0, ZOMBIE_FLAGS, 0, opts.zMoverBlend or opts.moverBlend or 1000.0, 0)
     end
     NetworkStartSynchronisedScene(scene)
-    fin.scene, fin.sceneKey, fin.sceneEntry, fin.sceneStart = scene, key, e, GetGameTimer()
+    fin.scene, fin.sceneKey, fin.sceneEntry, fin.sceneStart, fin.sceneLoop = scene, key, e, GetGameTimer(), opts.loop == true
     fin.firedEvents = {}
+    fin.lastPhase = 0.0
     Anim.release(e.dict)
     return true
 end
@@ -50,11 +51,14 @@ local function scenePhase(fin)
         return GetSynchronizedScenePhase(loc)
     end
     local dur = fin.sceneEntry and fin.sceneEntry.duration or 1.0
-    return math.min(1.0, (GetGameTimer() - fin.sceneStart) / 1000.0 / dur)
+    local p = (GetGameTimer() - fin.sceneStart) / 1000.0 / dur
+    return fin.sceneLoop and (p % 1.0) or math.min(1.0, p)
 end
 
 -- Fire clip events (sound, camera, fx) once when the scene passes their phase.
 local function fireEvents(fin, phase)
+    if fin.sceneLoop and phase < (fin.lastPhase or 0) - 0.5 then fin.firedEvents = {} end  -- loop wrapped
+    fin.lastPhase = phase
     for _, ev in ipairs(fin.sceneEntry and fin.sceneEntry.events or {}) do
         if not fin.firedEvents[ev.name] and phase >= (ev.phase or 0) then
             fin.firedEvents[ev.name] = true
@@ -186,6 +190,15 @@ local function runVictim(data)
         return release(fin, 'abort')
     end
     TriggerServerEvent(Events.FinisherClientState, fin.id, 'grab')
+    -- Diagnostics: report once if the zombie did not join the paired scene (server console + F8).
+    CreateThread(function()
+        Wait(400)
+        local e = fin.sceneEntry
+        if ZFin.active == fin and e and DoesEntityExist(fin.zombie) and not IsEntityPlayingAnim(fin.zombie, e.dict, e.actors.zombie, 3) then
+            print(('[jj_zombie] zombie is not playing %s/%s (owner %d)'):format(e.dict, e.actors.zombie, NetworkGetEntityOwner(fin.zombie)))
+            TriggerServerEvent(Events.AnimReport, { ok = false, msg = 'zombie not in the finisher scene', dict = e.dict, clip = e.actors.zombie })
+        end
+    end)
     ZCam.start(fin.origin, fin.heading, (data.dir >= 4) and -1.0 or 1.0)
     ZSound.loop('heartbeat', true, 0.5)
 
@@ -201,7 +214,7 @@ local function runVictim(data)
             fin.phase = 'struggle'
             fin.struggleStartLocal = now
             fin.intensity = chooseIntensity(fin)
-            playScene(fin, data.struggle[fin.intensity], { blendIn = 12.0 })
+            playScene(fin, data.struggle[fin.intensity], { blendIn = 12.0, loop = true })
             ZSound.loop('breath', true, 0.6)
             ZSound.loop('struggle', true, 0.5)
             nui({
@@ -210,10 +223,14 @@ local function runVictim(data)
                 ui = Config.UI, thresholds = data.thresholds,
             })
         elseif fin.phase == 'struggle' then
-            -- Loop seam: all intensity loops share the same seam pose, so switching there is clean.
-            if phase >= 0.985 then
-                fin.intensity = chooseIntensity(fin)
-                playScene(fin, data.struggle[fin.intensity], { blendIn = 16.0 })
+            -- The loop scene keeps running by itself; a new scene is only started when the intensity
+            -- changes, at the loop seam (all intensity loops share the same seam pose).
+            if phase >= 0.975 then
+                local want = chooseIntensity(fin)
+                if want ~= fin.intensity then
+                    fin.intensity = want
+                    playScene(fin, data.struggle[want], { blendIn = 16.0, loop = true })
+                end
             end
             if now - lastFlush >= 100 then flushInput(fin); lastFlush = now end
             if now - lastUi >= 100 then

@@ -16,6 +16,7 @@ JJZ.Hooks = JJZ.Hooks or {}
 JJZ.Hooks.struggleModifier = JJZ.Hooks.struggleModifier or function(src, fin) return 1.0 end
 
 local FEMALE = GetHashKey('mp_f_freemode_01')
+local HOLD_TIMEOUT_MS = 400
 
 -- ------------------------------------------------------------------ helpers
 local function now() return GetGameTimer() end
@@ -121,22 +122,45 @@ function F.tryStart(z, src, p, force)
     Player(src).state:set(PS.Fin, fin.id, true)
     Integration.setInventoryBlocked(src, true)
     Integration.addStress(src, Config.Finisher.StressOnGrab, 'zombie_grab')
-    setPhase(fin, P.Grab)
-    fin.struggleAt = fin.createdAt + math.floor(fin.grabDur * 1000)
-    TriggerClientEvent(JJZ.Events.FinisherStart, src, {
+    -- Hand-over: the zombie's owner first stops the zombie's own tasks (walking, reach overlay),
+    -- otherwise they would pull it out of the paired scene. The victim starts the scene once the
+    -- owner confirms (ZombieHeld) or after HOLD_TIMEOUT_MS at the latest.
+    setPhase(fin, P.Starting)
+    fin.holdDeadline = now() + HOLD_TIMEOUT_MS
+    fin.startPayload = {
         finId = fin.id, zombieNet = z.id, zombieType = z.type, gender = gender, dir = dir, alpha = alpha,
         grab = grab.name .. ':' .. grab.variant,
         struggle = { low = lo.name .. ':' .. lo.variant, mid = mid.name .. ':' .. mid.variant, high = hi.name .. ':' .. hi.variant },
         shove = shove.name .. ':' .. shove.variant, bite = bite.name .. ':' .. bite.variant,
         startProgress = fin.progress, timeLimit = Config.Finisher.TimeLimitSeconds,
         thresholds = Config.Finisher.Difficulty,
-    })
+    }
+    if not Own.sendToOwner(z, JJZ.Events.ZombieCmd, z.id, 'hold', fin.id) then F.sendStart(fin) end
     if ConfigServer.Log.Finishers then
         Integration.log('info', ('finisher #%d: %s (%d) grabbed by %s zombie %d (dir %d, %s)'):format(
             fin.id, GetPlayerName(src) or '?', src, z.type, z.id, dir, gender))
     end
     return true
 end
+
+-- Tell the victim to start the scene (once).
+function F.sendStart(fin)
+    if fin.phase ~= P.Starting then return end
+    setPhase(fin, P.Grab)
+    fin.startSentAt = now()
+    fin.struggleAt = fin.startSentAt + math.floor(fin.grabDur * 1000)
+    TriggerClientEvent(JJZ.Events.FinisherStart, fin.victim, fin.startPayload)
+end
+
+-- Owner confirms that the zombie stopped its own tasks.
+RegisterNetEvent(JJZ.Events.ZombieHeld, function(netId, finId)
+    local src = source
+    if not U.isInt(netId, 0, 65535) or not U.isInt(finId, 1, 2 ^ 31) or not Net.allow('Reports', src) then return end
+    local fin = F.byId[finId]
+    if not fin or fin.z.id ~= netId or fin.phase ~= P.Starting then return end
+    if not Own.isOwner(src, fin.z.ent) then return end
+    F.sendStart(fin)
+end)
 
 -- ------------------------------------------------------------------ progress model
 local function decayTo(fin, tMs)
@@ -324,7 +348,11 @@ local function tickFinisher(fin, t)
     if fin.phase ~= P.Bite and fin.phase ~= P.Success and Integration.isDown(src) then
         return F.finish(fin, JJZ.Results.Aborted, 'victim down')
     end
-    if not fin.clientConfirmed and t - fin.createdAt > 3500 then
+    if fin.phase == P.Starting then
+        if t >= fin.holdDeadline then F.sendStart(fin) end
+        return
+    end
+    if not fin.clientConfirmed and t - (fin.startSentAt or fin.createdAt) > 3500 then
         JJZ.Damage.swipe(src, z)
         return F.finish(fin, JJZ.Results.Aborted, 'victim client did not start the scene')
     end

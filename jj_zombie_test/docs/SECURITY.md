@@ -24,6 +24,7 @@ Grundsatz: Der Client ist feindlich. Er meldet nur **Absichten und Eingaben**, d
 | `spaceReport` | über Rate-Limit | boolean | – | Reports 8/s | beeinflusst nur Fallback |
 | `finClient` | Opfer | finId int, phase ≤ 16 Zeichen | eigener Finisher | Reports | nur `grab` (bestätigen) oder `failed` (Abbruch) |
 | `spawnPoints` | gültiger Spieler mit offener Anfrage | reqId, Punkte (Zahlen, keine NaN/Inf) | Anfrage offen, < 6 s | Anfrage verbraucht | Ring-/Höhen-/Abstandsprüfung gegen Serverposition |
+| `zombieHeld` | aktueller Besitzer | netId, finId int | Finisher in Phase `starting`, passender Zombie | Reports | startet nur die Szene früher; ohne Bestätigung startet sie nach 400 ms trotzdem |
 | `zombieInit` | aktueller Besitzer | netId int | einmal | Reports | – |
 | `captureFrame` | Sitzungsinhaber | id, index 1..120, meta geprüft | offene Sitzung | CaptureFrames 24/5 s | Dateiname nur aus `[A-Za-z0-9_]` |
 | `captureDone` | Sitzungsinhaber | id | offene Sitzung | – | – |

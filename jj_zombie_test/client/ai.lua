@@ -204,8 +204,19 @@ local function runOwnerAi(ent, info, st)
         if info.mode ~= 'frozen' then ClearPedTasks(ent); TaskStandStill(ent, -1); info.mode = 'frozen' end
         return
     end
+    -- In a finisher the paired scene drives the zombie: never issue own tasks (they would pull it
+    -- out of the scene). The 'hold' command already stopped walking and the reach overlay.
+    if (st[ST.Fin] or 0) ~= 0 or info.holdFin then
+        if info.mode == 'lunge' then ClearPedSecondaryTask(ent) end
+        info.mode = 'grab'
+        return
+    end
     if info.resumeAt and now < info.resumeAt then return end
-    if ai == S.Grab or ai == S.Stunned or ai == S.Dead then info.mode = ai; return end
+    if ai == S.Grab or ai == S.Stunned or ai == S.Dead then
+        if info.mode == 'lunge' then ClearPedSecondaryTask(ent) end
+        info.mode = ai
+        return
+    end
     local un = st[ST.Unstuck] or 0
     if un > info.unstuckSeen then
         info.unstuckSeen = un
@@ -249,7 +260,12 @@ local function runOwnerAi(ent, info, st)
     local speed = run and 2.6 or 1.0
     if ai == S.Ready and dist < 3.2 then
         if info.mode ~= 'lunge' or now - (info.lastNav or 0) > 600 then
-            TaskGoStraightToCoord(ent, tp.x, tp.y, tp.z, run and 2.0 or 1.3, 1200, 0.0, 0.0)
+            -- Aim at a point just in front of the target (never through it).
+            local d = tp - zp
+            local len = math.max(0.01, #d)
+            local stop = math.min(len, 0.8)
+            local g = tp - d / len * stop
+            TaskGoStraightToCoord(ent, g.x, g.y, g.z, run and 2.0 or 1.3, 1200, 0.0, 0.0)
             info.lastNav = now
             if info.mode ~= 'lunge' then playOnce(ent, 'zreact_reach', 16 | 32 | 1, 4.0) end
             info.mode = 'lunge'
@@ -263,7 +279,7 @@ local function runOwnerAi(ent, info, st)
 end
 
 -- Owner-side commands from the server.
-RegisterNetEvent(JJZ.Events.ZombieCmd, function(netId, cmd)
+RegisterNetEvent(JJZ.Events.ZombieCmd, function(netId, cmd, extra)
     if not JJZC.fromServer() or not U.isInt(netId, 0, 65535) then return end
     if not NetworkDoesEntityExistWithNetworkId(netId) then return end
     local ent = NetworkGetEntityFromNetworkId(netId)
@@ -271,7 +287,15 @@ RegisterNetEvent(JJZ.Events.ZombieCmd, function(netId, cmd)
     local info = ZAI.list[ent]
     if not info then scan(); info = ZAI.list[ent] end
     if not info then return end
-    if cmd == 'kill' then ZAI.startDeath(ent, info, false)
+    if cmd == 'hold' then
+        -- Finisher hand-over: stop walking and the reach overlay, then confirm to the server so
+        -- the victim can start the paired scene with a zombie that no task pulls away.
+        ClearPedSecondaryTask(ent)
+        ClearPedTasks(ent)
+        info.holdFin = extra
+        info.mode = 'grab'
+        if U.isInt(extra, 1, 2 ^ 31) then TriggerServerEvent(JJZ.Events.ZombieHeld, netId, extra) end
+    elseif cmd == 'kill' then ZAI.startDeath(ent, info, false)
     elseif cmd == 'swipe' and not info.dying then
         -- Blocked-space fallback: a short claw swipe instead of the paired finisher.
         local tped = targetPed(stateOf(ent))
@@ -279,6 +303,27 @@ RegisterNetEvent(JJZ.Events.ZombieCmd, function(netId, cmd)
         playOnce(ent, 'zreact_swipe', 16 | 32, 6.0)
         info.resumeAt = GetGameTimer() + 900
     end
+end)
+
+-- ------------------------------------------------------------------ preloading
+-- Finisher / reaction dictionaries stay loaded while zombies are around, so the first grab does
+-- not wait for streaming (the scene would start with a hitch otherwise).
+ZAI.preloaded = false
+function ZAI.preload(on)
+    ZAI.preloaded = on
+    for _, dict in ipairs(Clips.dicts()) do
+        if dict:find('^jjz_fin') or dict == 'jjz_react' then
+            if on then Anim.load(dict, 5000) else Anim.release(dict) end
+        end
+    end
+end
+
+-- The finisher ended for this zombie: own AI may run again.
+AddStateBagChangeHandler(ST.Fin, nil, function(bagName, _, value)
+    if value ~= 0 and value ~= nil then return end
+    local ent = GetEntityFromStateBagName(bagName)
+    local info = ent ~= 0 and ZAI.list[ent] or nil
+    if info then info.holdFin = nil; info.mode = nil end
 end)
 
 -- ------------------------------------------------------------------ main thread
@@ -292,6 +337,7 @@ CreateThread(function()
             lastScan = now
             any = next(ZAI.list) ~= nil
         end
+        if any ~= ZAI.preloaded then ZAI.preload(any) end
         if not any then
             Wait(1000)
         else
