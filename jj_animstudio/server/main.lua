@@ -6,11 +6,20 @@ local U = JJS.U
 local sessions = {}      -- src -> { since = ms }
 local last = {}          -- src -> { kind -> ms of the last accepted request }
 
+local deniedLogged = {}
 local function allowed(src)
-    if type(src) ~= 'number' or src <= 0 or not GetPlayerName(src) then return false end
+    src = tonumber(src)
+    if not src or src <= 0 or not GetPlayerName(src) then return false end
     local hook = Editable.hasAccess(src)
     if hook ~= nil then return hook == true end
-    return IsPlayerAceAllowed(src, Config.Ace) == true
+    if IsPlayerAceAllowed(src, Config.Ace) then return true end
+    -- One console line per player explains why access was refused.
+    if not deniedLogged[src] then
+        deniedLogged[src] = true
+        print(('^3[jj_animstudio] %s (%d) has no access: no ACE %s%s^0'):format(GetPlayerName(src), src, Config.Ace,
+            Config.JJCoreRole and (GetResourceState('jj_core') == 'started' and (' and jj_core role below ' .. Config.JJCoreRole) or ' (jj_core not started)') or ''))
+    end
+    return false
 end
 
 local function reply(src, op, ok, key, extra, ...)
@@ -186,7 +195,7 @@ end
 
 AddEventHandler('playerDropped', function()
     local src = source
-    sessions[src], last[src] = nil, nil
+    sessions[src], last[src], deniedLogged[src] = nil, nil, nil
     Jobs.dropPlayer(src)
 end)
 

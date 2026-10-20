@@ -78,7 +78,7 @@ add_ace group.admin jj_animstudio.use allow
 ```
 
 - **Andere Gruppe:** Nutzt du statt `group.admin` eine andere Admin-Gruppe, trag deren Namen ein (bei jj_core z. B. `group.jj_admin`).
-- **Ohne ACE, über jj_core:** In `config/config.lua` `Config.JJCoreRole = 'admin'` setzen. Dann reicht die jj_core-Rolle.
+- **Über jj_core (Standard):** `Config.JJCoreRole = 'admin'` in `config/config.lua`: Wer in jj_core mindestens admin ist (also auch owner), darf das Studio auch ohne ACE nutzen. `false` = nur ACE. Fehlt das Recht, schreibt der Server den Grund einmal in die Konsole.
 - **Nur falls der Neustart der Stream-Resource nicht klappt** (siehe KNOWN_ISSUES): `ConfigServer.RestartMethod = 'command'` setzen und zusätzlich `add_ace resource.jj_animstudio command.ensure allow` eintragen.
 
 `jj_animstudio_stream` muss **vor** dem Serverstart existieren. Also einmal `animkit watch` starten, dann den Server (neu) starten.

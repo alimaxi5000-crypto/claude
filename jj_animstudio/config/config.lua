@@ -20,7 +20,7 @@ Config.Debug = false                 -- true = extra F8 / server console output.
 --    add_ace group.admin jj_animstudio.use allow
 -- ============================================================
 Config.Ace = 'jj_animstudio.use'     -- ACE permission name | Default 'jj_animstudio.use'
-Config.JJCoreRole = false            -- Also allow this jj_core role and higher, e.g. 'admin'. false = ACE only
+Config.JJCoreRole = 'admin'          -- Also allow this jj_core role and higher (needs jj_core running). false = ACE only | Default 'admin'
 
 -- ============================================================
 --  STUDIO
