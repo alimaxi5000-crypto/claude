@@ -56,7 +56,8 @@ description 'Generated stream resource of jj_animstudio (clip dictionaries only)
 `;
 
 export function ensureFolders(P) {
-  for (const d of [P.inbox, P.outbox, P.work, P.final, P.streamFiles]) fs.mkdirSync(d, { recursive: true });
+  // SaveResourceFile cannot create folders: every folder the studio server writes into exists here.
+  for (const d of [P.inbox, P.outbox, P.work, P.final, P.streamFiles, path.join(P.data, 'projects'), path.join(P.data, 'backups'), path.join(P.data, 'poses'), path.join(P.data, 'skeletons')]) fs.mkdirSync(d, { recursive: true });
   const man = path.join(P.stream, 'fxmanifest.lua');
   if (!fs.existsSync(man)) fs.writeFileSync(man, STREAM_MANIFEST);
 }

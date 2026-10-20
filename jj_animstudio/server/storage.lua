@@ -11,7 +11,8 @@ local U = JJS.U
 local index, poseIndex = nil, nil
 
 local function load(path) return LoadResourceFile(RES, path) end
-local function save(path, data) return SaveResourceFile(RES, path, data, #data) == true end
+-- SAVE_RESOURCE_FILE returns a truthy value on success (not necessarily the boolean true).
+local function save(path, data) return not not SaveResourceFile(RES, path, data, #data) end
 
 local function projectPath(name) return ('data/projects/%s.anim.json'):format(name) end
 local function backupPath(name, n) return ('data/backups/%s.%d.anim.json'):format(name, n) end

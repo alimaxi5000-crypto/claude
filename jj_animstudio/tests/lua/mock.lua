@@ -197,7 +197,7 @@ function SaveResourceFile(_, p, data, len)
     assert(len == -1 or len == #data, 'SaveResourceFile length mismatch')
     assert(not p:find('%.%.'), 'path traversal in ' .. p)
     M.files[p] = data
-    return true
+    return 1   -- like the real native: truthy, not the boolean true
 end
 local realRemove = os.remove
 os.remove = function(p)
