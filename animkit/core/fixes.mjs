@@ -72,7 +72,7 @@ export function applyFix(doc, fix, { sampled } = {}) {
       tr.feet ||= {}; tr.feet.lock ||= {};
       const r = [clamp(T3(fix.range[0]), 0, d.duration), clamp(T3(fix.range[1]), 0, d.duration)];
       if (r[1] - r[0] < 0.05) r[1] = Math.min(d.duration, r[0] + 0.1);
-      tr.feet.lock[fix.side] = mergeRanges([...(tr.feet.lock[fix.side] || []), r]);
+      for (const side of fix.side === 'both' ? ['L', 'R'] : [fix.side]) tr.feet.lock[side] = mergeRanges([...(tr.feet.lock[side] || []), r]);
       return d;
     }
     case 'snapGround': {
@@ -149,6 +149,19 @@ export function applyFix(doc, fix, { sampled } = {}) {
       const dist = fix.dist || 0.02;
       tr.mover ||= [{ t: 0, p: [0, 0, 0], yaw: 0 }];
       for (const k of tr.mover) { const p = k.p || [0, 0, 0]; k.p = [+(p[0] + dir[0] * dist).toFixed(4), +(p[1] + dir[1] * dist).toFixed(4), p[2]]; }
+      return d;
+    }
+    case 'zeroStart': {
+      // Shift every mover key so the first one is (0, 0, 0, 0 deg); the motion stays the same.
+      const ks = (tr.mover || []).slice().sort((a, b) => a.t - b.t);
+      if (!ks.length) return d;
+      const p0 = ks[0].p || [0, 0, 0], y0 = ks[0].yaw || 0;
+      const c = Math.cos(-y0 * Math.PI / 180), s = Math.sin(-y0 * Math.PI / 180);
+      for (const k of tr.mover) {
+        const p = k.p || [0, 0, 0], dx = p[0] - p0[0], dy = p[1] - p0[1];
+        k.p = [+(dx * c - dy * s).toFixed(4), +(dx * s + dy * c).toFixed(4), +(p[2] - p0[2]).toFixed(4)];
+        k.yaw = +((k.yaw || 0) - y0).toFixed(2);
+      }
       return d;
     }
     case 'stick': {

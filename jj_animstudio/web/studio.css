@@ -110,3 +110,7 @@ textarea { width: 100%; resize: vertical; user-select: text; }
 
 @media (max-height: 820px) { :root { --bottom: 12em; --right: 20em; --left: 13.5em; } }
 @media (max-width: 1500px) { #top .brand { display: none; } .cams .btn { padding: 0.25em 0.4em; } }
+
+/* Contact sheet capture (tools/contact-sheets.mjs): only the 3D view, full window. */
+#app.sheet #top, #app.sheet #left, #app.sheet #right, #app.sheet #bottom, #app.sheet #labels, #app.sheet #toasts { display: none !important; }
+#app.sheet #view { left: 0; right: 0; top: 0; bottom: 0; }

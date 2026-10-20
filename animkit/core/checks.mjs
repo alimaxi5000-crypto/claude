@@ -56,6 +56,32 @@ function plantedWindow(skel, frames, side, frame) {
   return [+(a / FPS).toFixed(3), +(b / FPS).toFixed(3)];
 }
 
+// Largest planted-foot speed (m/s) per side, measured like metrics.measureActor (heel and ball
+// of the foot, planted while within 2 cm of the ground).
+export function footSlideBySide(skel, frames, fps = FPS) {
+  const out = { L: 0, R: 0 };
+  for (const side of ['L', 'R']) {
+    const ai = skel.idx(BODY.side[side].foot);
+    const ti = skel.has(BODY.side[side].toe) ? skel.idx(BODY.side[side].toe) : -1;
+    const pts = (s) => {
+      const q = qnorm(qmul(s.mover.q, s.D[ai]));
+      const list = [[vadd(s.world.P[ai], qrot(q, [0, -0.05, -0.085])), 0]];
+      if (ti >= 0) list.push([s.world.P[ti], 0.035]);
+      return list;
+    };
+    for (let f = 1; f < frames.length; f++) {
+      const a = pts(frames[f - 1]), b = pts(frames[f]);
+      const ga = skel.groundZ + frames[f - 1].mover.p[2], gb = skel.groundZ + frames[f].mover.p[2];
+      for (let k = 0; k < a.length; k++) {
+        if (a[k][0][2] - ga - a[k][1] < 0.02 && b[k][0][2] - gb - b[k][1] < 0.02) {
+          out[side] = Math.max(out[side], Math.hypot(b[k][0][0] - a[k][0][0], b[k][0][1] - a[k][0][1]) * fps);
+        }
+      }
+    }
+  }
+  return out;
+}
+
 // Findings: [{ id, category, level: 'ok'|'warn'|'error', title, text, value, limit, unit, t, actor, fix }]
 export function evaluateChecks(doc, sampled, measured = measureDocument(doc, sampled)) {
   const out = [];
@@ -72,11 +98,14 @@ export function evaluateChecks(doc, sampled, measured = measureDocument(doc, sam
       const side = /^([LR])/.exec(it.detail)?.[1];
       const part = /(heel|toe)/.exec(it.detail)?.[1];
       const level = !it.pass ? 'error' : it.value > it.limit * 0.8 ? 'warn' : 'ok';
+      // Both feet sliding (e.g. the pelvis moved with FK legs): one fix locks both.
+      const per = level !== 'ok' ? footSlideBySide(skel, sampled.frames[id]) : null;
+      const both = per && per.L > it.limit * 0.8 && per.R > it.limit * 0.8;
       add({
         id: `${id}.footSlide`, category: 'feet', level, actor: id, t: at(it), value: +it.value.toFixed(3), limit: it.limit, unit: 'm/s',
         title: 'Fußrutschen',
         text: level === 'ok' ? `${who}Die Füße stehen fest.` : `${who}Fuß ${SIDE[side] || ''} (${PART[part] || 'Fuß'}) rutscht mit ${it.value.toFixed(2)} m/s über den Boden (erlaubt ${it.limit} m/s).`,
-        fix: level !== 'ok' && side ? { kind: 'lockFeet', actor: id, side, range: plantedWindow(skel, sampled.frames[id], side, Math.max(0, it.frame)), label: `Fuß ${SIDE[side]} festkleben` } : null,
+        fix: level !== 'ok' && side ? { kind: 'lockFeet', actor: id, side: both ? 'both' : side, range: plantedWindow(skel, sampled.frames[id], side, Math.max(0, it.frame)), label: both ? 'Beide Füße festkleben' : `Fuß ${SIDE[side]} festkleben` } : null,
       });
     }
     // Ground penetration.
@@ -129,6 +158,13 @@ export function evaluateChecks(doc, sampled, measured = measureDocument(doc, sam
     if (!m.selfPenetration.pass) {
       const it = m.selfPenetration;
       add({ id: `${id}.selfPen`, category: 'self', level: 'warn', actor: id, t: at(it), value: +it.value.toFixed(3), limit: it.limit, unit: 'm', title: 'Arm im eigenen Körper', text: `${who}${it.detail.replace('fore', 'Unterarm ').replace('vs', 'in')} (${cm(it.value)} cm). Gewollt? Sonst Arm etwas weiter weg.` });
+    }
+    // Single clips: GTA ignores the clip's start offset (the ped starts where it stands).
+    if (doc.type === 'single') {
+      const k0 = (doc.tracks[id]?.mover || []).slice().sort((a, b) => a.t - b.t)[0];
+      if (k0 && (Math.hypot(...(k0.p || [0, 0, 0])) > 0.005 || Math.abs(k0.yaw || 0) > 0.5)) {
+        add({ id: `${id}.startOffset`, category: 'mover', level: 'warn', actor: id, t: 0, value: +Math.hypot(...(k0.p || [0, 0, 0])).toFixed(3), limit: 0, unit: 'm', title: 'Startversatz', text: `${who}Der Standpunkt bei 0 s ist verschoben/gedreht. GTA ignoriert einen Startversatz im Clip, der Ped beginnt dort, wo er steht.`, fix: { kind: 'zeroStart', actor: id, label: 'Start auf 0 setzen' } });
+      }
     }
     if (!m.floatFeet.pass) {
       const it = m.floatFeet;

@@ -11,6 +11,9 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GZ = -0.993 + 0.085;   // ankle height of a flat foot on the reference skeleton (body space)
 const r3 = (v) => v.map((x) => +x.toFixed(4));
+// Natural stand for arms that are not animated (the bind pose is an A-pose).
+const STAND_ARM = { UpperArm: [4, 36, 0], Forearm: [12, 0, 0] };
+const standArms = (sides = ['L', 'R']) => Object.fromEntries(sides.flatMap((s) => [[`SKEL_${s}_UpperArm`, [{ t: 0, rot: STAND_ARM.UpperArm }]], [`SKEL_${s}_Forearm`, [{ t: 0, rot: STAND_ARM.Forearm }]]]));
 const write = (name, doc) => fs.writeFileSync(path.join(HERE, `${name}.anim.json`), JSON.stringify(doc, null, 1) + '\n');
 
 write('single_wave', {
@@ -20,12 +23,12 @@ write('single_wave', {
     a: {
       mover: [{ t: 0, p: [0, 0, 0], yaw: 0 }],
       bones: {
-        SKEL_R_UpperArm: [{ t: 0, rot: [0, 0, 0] }, { t: 0.5, rot: [20, -100, 10] }, { t: 1.9, rot: [20, -100, 10] }],
-        SKEL_R_Forearm: [{ t: 0, rot: [10, 0, 0] }, { t: 0.5, rot: [70, 0, 0] }, { t: 0.8, rot: [40, 0, 0] }, { t: 1.1, rot: [70, 0, 0] }, { t: 1.4, rot: [40, 0, 0] }, { t: 1.7, rot: [70, 0, 0] }, { t: 1.9, rot: [70, 0, 0] }],
+        ...standArms(['L']),
+        SKEL_R_UpperArm: [{ t: 0, rot: STAND_ARM.UpperArm }, { t: 0.5, rot: [20, -100, 10] }, { t: 1.9, rot: [20, -100, 10] }],
+        SKEL_R_Forearm: [{ t: 0, rot: STAND_ARM.Forearm }, { t: 0.5, rot: [70, 0, 0] }, { t: 0.8, rot: [40, 0, 0] }, { t: 1.1, rot: [70, 0, 0] }, { t: 1.4, rot: [40, 0, 0] }, { t: 1.7, rot: [70, 0, 0] }, { t: 1.9, rot: [70, 0, 0] }],
         SKEL_Head: [{ t: 0, rot: [0, 0, 0] }, { t: 0.6, rot: [-8, 0, -25] }, { t: 1.9, rot: [-8, 0, -25] }],
         SKEL_Spine2: [{ t: 0, rot: [0, 0, 0] }, { t: 0.6, rot: [0, -4, -6] }, { t: 1.9, rot: [0, -4, -6] }],
       },
-      ik: { handL: [{ t: 0, target: [-0.36, 0.02, -0.33], space: 'body' }] },
       fingers: { R: [{ t: 0, preset: 'relaxed' }, { t: 0.5, preset: 'open' }, { t: 1.9, preset: 'open' }], L: [{ t: 0, preset: 'relaxed' }] },
       look: [{ t: 0, target: [0, 2, 0.6], space: 'body', weight: 0.5 }],
     },
@@ -40,13 +43,13 @@ write('pair_shoulder', {
     a: {
       mover: [{ t: 0, p: [0, 0, 0], yaw: 0 }],
       ik: { handR: [{ t: 0, target: [0.3, 0.05, -0.28], pole: [0.6, -0.5, -0.6] }, { t: 0.7, target: [0.18, 0.4, 0.3], pole: [0.8, -0.4, -0.4], ease: 'fastIn' }] },
-      bones: { SKEL_Spine2: [{ t: 0, rot: [0, 0, 0] }, { t: 0.8, rot: [-8, 0, 4] }] },
+      bones: { ...standArms(['L']), SKEL_Spine2: [{ t: 0, rot: [0, 0, 0] }, { t: 0.8, rot: [-8, 0, 4] }] },
       fingers: { R: [{ t: 0, preset: 'relaxed' }, { t: 0.7, preset: 'grab', curl: 0.6 }] },
       look: [{ t: 0, target: [0, 0.6, 0.55], space: 'body', weight: 0.8 }],
     },
     b: {
       mover: [{ t: 0, p: [0, 0.42, 0], yaw: 180 }],
-      bones: { SKEL_Head: [{ t: 0, rot: [0, 0, 0] }, { t: 0.9, rot: [0, 0, 0] }, { t: 1.4, rot: [-5, 0, -30] }], SKEL_Spine1: [{ t: 0.9, rot: [0, 0, 0] }, { t: 1.4, rot: [0, 0, -6] }] },
+      bones: { ...standArms(), SKEL_Head: [{ t: 0, rot: [0, 0, 0] }, { t: 0.9, rot: [0, 0, 0] }, { t: 1.4, rot: [-5, 0, -30] }], SKEL_Spine1: [{ t: 0.9, rot: [0, 0, 0] }, { t: 1.4, rot: [0, 0, -6] }] },
     },
   },
   contacts: [{ id: 'hand_shoulder', from: 'a.handR', to: 'b.SKEL_L_UpperArm', offset: [0, 0, 0.07], t: [0.75, 2.0], stick: true, max: 0.03 }],
@@ -95,7 +98,7 @@ write('fingers_demo', {
   tracks: {
     a: {
       mover: [{ t: 0, p: [0, 0, 0], yaw: 0 }],
-      ik: { handL: [{ t: 0, target: [-0.22, 0.32, 0.12] }], handR: [{ t: 0, target: [0.22, 0.32, 0.12] }] },
+      ik: { handL: [{ t: 0, target: [-0.22, 0.34, 0.3], pole: [-0.8, -0.3, -0.5] }], handR: [{ t: 0, target: [0.22, 0.34, 0.3], pole: [0.8, -0.3, -0.5] }] },
       fingers: {
         L: presets.map((p, i) => ({ t: +(i * 0.5).toFixed(2), preset: p, spread: p === 'open' ? 0.8 : undefined })).map((k) => JSON.parse(JSON.stringify(k))),
         R: presets.slice().reverse().map((p, i) => ({ t: +(i * 0.5).toFixed(2), preset: p, curl: 0.9 })),

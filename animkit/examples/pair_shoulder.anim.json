@@ -61,6 +61,26 @@
     ]
    },
    "bones": {
+    "SKEL_L_UpperArm": [
+     {
+      "t": 0,
+      "rot": [
+       4,
+       36,
+       0
+      ]
+     }
+    ],
+    "SKEL_L_Forearm": [
+     {
+      "t": 0,
+      "rot": [
+       12,
+       0,
+       0
+      ]
+     }
+    ],
     "SKEL_Spine2": [
      {
       "t": 0,
@@ -119,6 +139,46 @@
     }
    ],
    "bones": {
+    "SKEL_L_UpperArm": [
+     {
+      "t": 0,
+      "rot": [
+       4,
+       36,
+       0
+      ]
+     }
+    ],
+    "SKEL_L_Forearm": [
+     {
+      "t": 0,
+      "rot": [
+       12,
+       0,
+       0
+      ]
+     }
+    ],
+    "SKEL_R_UpperArm": [
+     {
+      "t": 0,
+      "rot": [
+       4,
+       36,
+       0
+      ]
+     }
+    ],
+    "SKEL_R_Forearm": [
+     {
+      "t": 0,
+      "rot": [
+       12,
+       0,
+       0
+      ]
+     }
+    ],
     "SKEL_Head": [
      {
       "t": 0,

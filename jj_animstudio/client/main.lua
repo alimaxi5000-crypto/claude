@@ -158,8 +158,6 @@ end)
 
 cb('close', function() Studio.stop() end)
 
-cb('notify', function(d) if type(d.text) == 'string' then notify(d.text:sub(1, 200)) end end)
-
 AddEventHandler('onResourceStop', function(res)
     if res == GetCurrentResourceName() and Studio.open then
         SetNuiFocus(false, false)

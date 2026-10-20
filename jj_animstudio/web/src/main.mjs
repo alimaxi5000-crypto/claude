@@ -52,7 +52,7 @@ function initTooltips() {
 function translateStatic() {
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
 }
-let modalClose = null;
+let modalClose = null, projectsOpen = false;
 function dialog(title, body, buttons = [], { onClose } = {}) {
   const d = $('#dialog');
   d.innerHTML = '';
@@ -62,21 +62,22 @@ function dialog(title, body, buttons = [], { onClose } = {}) {
   const first = d.querySelector('input,select,textarea');
   if (first) setTimeout(() => first.focus(), 30);
 }
-function closeDialog() { $('#modal').classList.add('hidden'); const f = modalClose; modalClose = null; f?.(); }
+// dismiss = closed without an answer (Escape, close button): runs the dialog's onClose.
+function closeDialog(dismiss = true) { $('#modal').classList.add('hidden'); projectsOpen = false; const f = modalClose; modalClose = null; if (dismiss) f?.(); }
 const isModal = () => !$('#modal').classList.contains('hidden');
 function confirmBox(text) {
   return new Promise((res) => dialog(t('app_title'), h('p', {}, text), [
-    h('button', { class: 'btn', onclick: () => { closeDialog(); res(false); } }, t('no')),
-    h('button', { class: 'btn accent', onclick: () => { closeDialog(); res(true); } }, t('yes')),
+    h('button', { class: 'btn', onclick: () => { closeDialog(false); res(false); } }, t('no')),
+    h('button', { class: 'btn accent', onclick: () => { closeDialog(false); res(true); } }, t('yes')),
   ], { onClose: () => res(false) }));
 }
 function promptBox(text, value = '', hint = '') {
   return new Promise((res) => {
     const input = h('input', { type: 'text', value, style: 'width:100%' });
-    const ok = () => { const v = input.value.trim(); closeDialog(); res(v || null); };
+    const ok = () => { const v = input.value.trim(); closeDialog(false); res(v || null); };
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok(); });
     dialog(text, h('div', {}, input, hint ? h('div', { class: 'hint' }, hint) : null), [
-      h('button', { class: 'btn', onclick: () => { closeDialog(); res(null); } }, t('cancel')),
+      h('button', { class: 'btn', onclick: () => { closeDialog(false); res(null); } }, t('cancel')),
       h('button', { class: 'btn accent', onclick: ok }, t('ok')),
     ], { onClose: () => res(null) });
   });
@@ -717,6 +718,7 @@ function openDoc(doc, name) {
   select({ actor: 'a', selBone: null, selHandle: null });
   if (doc.type === 'pair') spawnPartner(); else post('partner', { model: null });
   closeDialog();
+  camPreset(doc.type === 'pair' ? 'side' : 'front');
   renderAll();
   runChecks();
 }
@@ -727,7 +729,6 @@ async function spawnPartner() {
 }
 
 // ------------------------------------------------------------------ projects dialog
-let projectsOpen = false;
 function showProjects() {
   projectsOpen = true;
   let selected = S.name;
@@ -776,7 +777,7 @@ function showProjects() {
   dialog(t('projects'), body, [
     S.doc ? h('button', { class: 'btn', onclick: closeDialog }, t('close')) : null,
     h('button', { class: 'btn accent', onclick: create }, t('create')),
-  ], { onClose: () => { projectsOpen = false; } });
+  ]);
 }
 
 // ------------------------------------------------------------------ test in game
@@ -996,11 +997,20 @@ function bindUi() {
     mutate((d) => { for (const k of S.selKeys) setEaseAt(d, k.actor, k.group, k.t, b.dataset.ease); });
   };
   $('#btn-key-del').onclick = deleteSelection;
-  $('#btn-event').onclick = async () => {
-    const n = await promptBox(t('event_name'), 'impact', t('name_hint'));
-    if (!n) return;
-    if (!/^[a-z0-9_]{1,24}$/.test(n)) return toast(t('name_hint'), 'error');
-    mutate((d) => addEvent(d, n, S.t));
+  $('#btn-event').onclick = () => {
+    const name = h('input', { type: 'text', value: 'impact' });
+    const dur = h('input', { type: 'number', min: 0, max: 30, step: 0.05, value: 0 });
+    dialog(t('add_event'), h('div', {}, h('div', { class: 'row' }, h('label', {}, t('event_name')), name), h('div', { class: 'hint' }, t('name_hint')),
+      h('div', { class: 'row' }, h('label', {}, t('event_duration')), dur)), [
+      h('button', { class: 'btn', onclick: () => closeDialog(false) }, t('cancel')),
+      h('button', { class: 'btn accent', onclick: () => {
+        const n = name.value.trim();
+        if (!/^[a-z0-9_]{1,24}$/.test(n)) return toast(t('name_hint'), 'error');
+        const d0 = Math.max(0, Math.min(S.doc.duration - S.t, +dur.value || 0));
+        mutate((d) => addEvent(d, n, S.t, d0 > 0 ? d0 : undefined));
+        closeDialog(false);
+      } }, t('ok')),
+    ]);
   };
   window.addEventListener('keydown', onKey);
   setInterval(() => { if (S.dirty && !S.test) save(); }, Math.max(10, S.config.autosave || 30) * 1000);
@@ -1076,4 +1086,50 @@ if (!inGame) {
 }
 
 // Test hooks (Playwright): state access without touching internals elsewhere.
-window.JJS_STUDIO = { S, solveAt, runChecks, serialize: () => serialize(S.doc), setTime, select: selectBone, view: () => view, handleList: () => handleList(solveAt(S.t)), groupOf };
+window.JJS_STUDIO = {
+  S, solveAt, runChecks, serialize: () => serialize(S.doc), setTime, select: selectBone, view: () => view, groupOf,
+  // Page coordinates of a scene-frame point / of a handle / of a point on a gizmo ring.
+  screenOf(p) { const s = view.project(p); const r = view.renderer.domElement.getBoundingClientRect(); return { x: s.x + r.left, y: s.y + r.top }; },
+  handleScreen(actor, name) { const hd = handleList(solveAt(S.t)).find((x) => x.actor === actor && x.name === name); return hd ? this.screenOf(hd.p) : null; },
+  ringScreen(k, angleDeg) {
+    const g = gizmoState;
+    if (!g) return null;
+    const ax = g.axes[k];
+    const ref = Math.abs(ax[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+    const u = [ax[1] * ref[2] - ax[2] * ref[1], ax[2] * ref[0] - ax[0] * ref[2], ax[0] * ref[1] - ax[1] * ref[0]];
+    const ul = Math.hypot(...u); const uu = u.map((x) => x / ul);
+    const v = [ax[1] * uu[2] - ax[2] * uu[1], ax[2] * uu[0] - ax[0] * uu[2], ax[0] * uu[1] - ax[1] * uu[0]];
+    const s = Math.max(0.05, view.camDistanceTo(g.p) * 0.11), a = angleDeg * DEG;
+    return this.screenOf(g.p.map((x, i) => x + s * (Math.cos(a) * uu[i] + Math.sin(a) * v[i])));
+  },
+  gizmo: () => gizmoState,
+  // Contact sheet of the current document: cols x rows frames over the clip from one camera
+  // preset (panels hidden), returned as a PNG data URL. Used by tools/contact-sheets.mjs.
+  async contactSheet({ cols = 4, rows = 2, cam = 'side', width = 360, height = 300, t0 = 0, t1 = null } = {}) {
+    const app = document.getElementById('app');
+    app.classList.add('sheet');
+    view.resize();
+    const out = document.createElement('canvas');
+    out.width = cols * width; out.height = rows * height;
+    const g = out.getContext('2d');
+    g.fillStyle = '#20232a'; g.fillRect(0, 0, out.width, out.height);
+    const n = cols * rows, T1 = t1 ?? S.doc.duration;
+    for (let i = 0; i < n; i++) {
+      const tt = t0 + (T1 - t0) * (n > 1 ? i / (n - 1) : 0);
+      S.t = tt; S.selBone = null; S.selHandle = null;
+      camPreset(cam);
+      const sols = solveAt(tt);
+      for (const id of ACTORS()) view.updateActor(id, sols[id], null);
+      view.setHandles([]); view.hideGizmo();
+      view.render();
+      const c = view.renderer.domElement;
+      const s = Math.min(width / c.width, height / c.height);
+      g.drawImage(c, (i % cols) * width + (width - c.width * s) / 2, Math.floor(i / cols) * height + (height - c.height * s) / 2, c.width * s, c.height * s);
+      g.fillStyle = '#ffffff'; g.font = '16px sans-serif'; g.fillText(`${tt.toFixed(2)} s`, (i % cols) * width + 8, Math.floor(i / cols) * height + 20);
+    }
+    app.classList.remove('sheet');
+    view.resize();
+    return out.toDataURL('image/png');
+  },
+  openDocument(doc, name) { openDoc(doc, name); },
+};
