@@ -120,7 +120,6 @@ function open(data) {
     timeline = createTimeline($('#timeline'), { onEdit: () => {} });
     bindView();
     bindUi();
-    requestAnimationFrame(frame);
   }
   view.resize();
   view.setPreset('front');
@@ -133,8 +132,9 @@ function open(data) {
   showProjects();
   maybeTutorial();
 }
-onMessage('open', (m) => open(m.data || {}));
-onMessage('close', () => { $('#app').classList.add('hidden'); S.doc = null; });
+onMessage('open', (m) => { open(m.data || {}); startLoop(); });
+// Closed studio: no rendering, no timers (the NUI page stays loaded in the game).
+onMessage('close', () => { $('#app').classList.add('hidden'); S.doc = null; S.test = null; running = false; });
 
 // ------------------------------------------------------------------ camera + entity sync
 let camTimer = 0, camPending = null;
@@ -158,9 +158,11 @@ function sendPlacement(sols) {
 }
 
 // ------------------------------------------------------------------ render loop
-let lastFrame = performance.now(), needTimeline = true;
+let lastFrame = performance.now(), needTimeline = true, running = false;
 on('*', () => { needTimeline = true; });
+function startLoop() { if (running) return; running = true; lastFrame = performance.now(); requestAnimationFrame(frame); }
 function frame(now) {
+  if (!running) return;
   requestAnimationFrame(frame);
   const dt = Math.min(0.1, (now - lastFrame) / 1000);
   lastFrame = now;
@@ -827,8 +829,9 @@ onMessage('test:state', (m) => {
   needTimeline = true;
   updateMeasure();
 });
-onMessage('test:stopped', () => { S.test = null; renderTest(); view?.setLines([]); });
-function stopTest() { post('test', { action: 'stop' }); S.test = null; renderTest(); view.setLines([]); }
+// After a test the entities go back to the editing positions (placement is re-sent).
+onMessage('test:stopped', () => { S.test = null; lastPlace = ''; renderTest(); view?.setLines([]); });
+function stopTest() { post('test', { action: 'stop' }); S.test = null; lastPlace = ''; renderTest(); view.setLines([]); }
 
 function renderTest() {
   const sec = $('#sec-test'), box = $('#test');
@@ -1013,7 +1016,7 @@ function bindUi() {
     ]);
   };
   window.addEventListener('keydown', onKey);
-  setInterval(() => { if (S.dirty && !S.test) save(); }, Math.max(10, S.config.autosave || 30) * 1000);
+  setInterval(() => { if (running && S.dirty && !S.test) save(); }, Math.max(10, S.config.autosave || 30) * 1000);
 }
 const dedupe = (ks) => { const seen = new Set(); return ks.filter((k) => { const q = Math.round(k.t * 1000); if (seen.has(q)) return false; seen.add(q); return true; }); };
 let treeT = 0, inspT = 0;
@@ -1132,4 +1135,5 @@ window.JJS_STUDIO = {
     return out.toDataURL('image/png');
   },
   openDocument(doc, name) { openDoc(doc, name); },
+  running: () => running,
 };

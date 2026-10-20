@@ -1,0 +1,18 @@
+# systemd unit for the jj_animstudio converter (Linux). Copy to /etc/systemd/system/,
+# adjust User and WorkingDirectory, then:
+#   sudo systemctl daemon-reload && sudo systemctl enable --now animkit-watch
+# Logs: journalctl -u animkit-watch -f
+[Unit]
+Description=animkit watch (jj_animstudio converter)
+After=network.target
+
+[Service]
+Type=simple
+User=fivem
+WorkingDirectory=/srv/fivem/animkit
+ExecStart=/usr/bin/node cli/animkit.mjs watch
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

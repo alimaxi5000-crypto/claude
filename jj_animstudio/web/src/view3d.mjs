@@ -69,10 +69,15 @@ export function createView(el, { inGame, onCamera }) {
   }
   function focusOn(p, dist = 1.2) { cam.target = p.slice(); cam.dist = Math.max(limits.min, dist); applyCamera(); }
 
+  // The game camera fills the whole screen, the overlay canvas only the view panel. The three.js
+  // camera therefore renders the matching sub-rectangle of the full-screen frustum (view offset),
+  // so bones sit exactly on the game picture behind the panel.
   function resize() {
     const r = el.getBoundingClientRect();
     renderer.setSize(r.width, r.height, false);
-    camera.aspect = r.width / Math.max(1, r.height);
+    const W = Math.max(1, window.innerWidth), H = Math.max(1, window.innerHeight);
+    camera.aspect = W / H;
+    camera.setViewOffset(W, H, r.left, r.top, Math.max(1, r.width), Math.max(1, r.height));
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);

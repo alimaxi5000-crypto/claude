@@ -43,12 +43,12 @@
   </main>
 
   <aside id="right" class="panel">
+    <section id="sec-test" class="hidden"><h3 data-t="test_title"></h3><div id="test"></div></section>
     <section id="sec-selected"><h3 data-t="selected"></h3><div id="inspector"></div></section>
+    <section id="sec-checks"><h3><span data-t="checks"></span> <span id="light" class="light"></span></h3><div id="checks"></div></section>
     <section id="sec-fingers"><h3 data-t="fingers"></h3><div id="fingers"></div></section>
     <section id="sec-helpers"><h3 data-t="helpers"></h3><div id="helpers"></div></section>
     <section id="sec-poses"><h3 data-t="pose_library"></h3><div id="poses"></div></section>
-    <section id="sec-test" class="hidden"><h3 data-t="test_title"></h3><div id="test"></div></section>
-    <section id="sec-checks"><h3><span data-t="checks"></span> <span id="light" class="light"></span></h3><div id="checks"></div></section>
   </aside>
 
   <footer id="bottom" class="panel">
@@ -68,7 +68,7 @@
       </div>
       <button id="btn-key-del" class="btn small" data-t="key_delete"></button>
       <button id="btn-event" class="btn small" data-t="add_event" data-tip="tip_add_event"></button>
-      <label class="check"><input type="checkbox" id="chk-allrows"><span>Alle Zeilen</span></label>
+      <label class="check"><input type="checkbox" id="chk-allrows"><span data-t="all_rows"></span></label>
       <span id="range-out"></span>
     </div>
     <div id="timeline-wrap"><canvas id="timeline"></canvas></div>

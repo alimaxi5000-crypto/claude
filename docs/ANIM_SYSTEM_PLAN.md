@@ -1,6 +1,6 @@
 # Animations-System: Gesamtplan und Umsetzungsplan
 
-Stand: 2026-10-20 · Status: **Plan** (noch kein Code) · Grundlage: Pipeline aus `jj_zombie_dev`
+Stand: 2026-10-20 · Status: **Plan**; Phase 2 Version 1 umgesetzt in `jj_animstudio` 0.1.0 + `animkit` (im Spiel noch ungetestet, siehe `jj_animstudio/README.md`) · Grundlage: Pipeline aus `jj_zombie_dev`
 
 ## 1. Ziel in einem Satz
 

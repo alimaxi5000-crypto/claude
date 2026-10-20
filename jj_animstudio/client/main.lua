@@ -13,7 +13,7 @@ local function notify(text) TriggerEvent('chat:addMessage', { args = { 'Animatio
 local SERVER_OPS = {
     list = { E.list }, load = { E.load }, save = { E.save, true }, rename = { E.rename }, duplicate = { E.duplicate },
     delete = { E.delete }, preview = { E.preview, true }, finalize = { E.finalize, true },
-    poseSave = { E.poseSave }, poseDelete = { E.poseDelete },
+    poseSave = { E.poseSave, true }, poseDelete = { E.poseDelete },
 }
 
 local function frameLoop()

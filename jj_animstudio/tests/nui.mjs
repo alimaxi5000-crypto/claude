@@ -72,6 +72,9 @@ for (const [w, h] of [[1366, 768], [1920, 1080], [2560, 1440], [3840, 2160]]) {
   await page.waitForTimeout(300);
   await layoutCheck(page, w, h, `${w}x${h} editor`);
   ok(!!(await S(page, () => window.JJS_STUDIO.gizmo())), `${w}x${h}: rotation rings shown for the selected bone`);
+  // Overlay = sub-rectangle of the full-screen game frustum: the camera target is the screen centre.
+  const c = await S(page, () => window.JJS_STUDIO.screenOf(window.JJS_STUDIO.view().cam.target));
+  ok(Math.abs(c.x - w / 2) < 1.5 && Math.abs(c.y - h / 2) < 1.5, `${w}x${h}: overlay aligned with the full-screen game camera (target at ${c.x.toFixed(1)}, ${c.y.toFixed(1)})`);
   await page.screenshot({ path: path.join(OUT, `studio_${w}x${h}_editor.png`) });
   ok(!errors.length, `${w}x${h}: console errors: ${errors.join(' | ')}`);
   await page.close();
@@ -181,6 +184,10 @@ ok((await S(page, () => window.JJS_STUDIO.S.test?.stage)) === 'playing', 'click 
 await page.screenshot({ path: path.join(OUT, 'studio_test.png') });
 ok(!errors.length, `click path: console errors: ${errors.join(' | ')}`);
 fs.writeFileSync(path.join(TMP, 'klick_test.anim.json'), saved || '{}');
+// Closing stops the render loop (0 cost while closed).
+await S(page, () => window.postMessage({ type: 'close' }, '*'));
+await page.waitForTimeout(100);
+ok((await S(page, () => window.JJS_STUDIO.running())) === false, 'closed studio: render loop stopped');
 await page.close();
 await browser.close();
 
