@@ -211,11 +211,23 @@ function boneRotAt(actor, bone) {
   if (bone === 'SKEL_ROOT') return valueAt(S.doc, { actor, kind: 'root' }, S.t)?.rot || [0, 0, 0];
   return valueAt(S.doc, { actor, kind: 'bone', id: bone }, S.t)?.rot || [0, 0, 0];
 }
+// First key of a track at a later time: also key the previous value at 0 s, so the change becomes
+// a motion instead of a pose held for the whole clip.
+function ensureStartKey(doc, ref, prev) {
+  if (S.t < 0.5 / FPS) return;
+  const keys = keysOf(doc, ref);
+  if (keys && keys.length) return;
+  setKey(doc, ref, 0, prev);
+}
 function setBoneRot(doc, actor, bone, rot) {
   if (bone === 'SKEL_ROOT') {
     const cur = valueAt(doc, { actor, kind: 'root' }, S.t);
+    ensureStartKey(doc, { actor, kind: 'root' }, { p: [0, 0, 0], rot: [0, 0, 0] });
     setKey(doc, { actor, kind: 'root' }, S.t, { p: cur?.p || [0, 0, 0], rot });
-  } else setKey(doc, { actor, kind: 'bone', id: bone }, S.t, { rot });
+  } else {
+    ensureStartKey(doc, { actor, kind: 'bone', id: bone }, { rot: [0, 0, 0] });
+    setKey(doc, { actor, kind: 'bone', id: bone }, S.t, { rot });
+  }
 }
 function selectBone(actor, bone) {
   select({ actor, selBone: bone, selHandle: null, selGroup: bone ? groupOfBone(bone) : null });
@@ -396,10 +408,11 @@ function dragHandle(o, e) {
     if (name === 'root') {
       const d = qrot(qconj(sol.mover.q), vsub(p, o.start));
       const cur = valueAt(doc, { actor, kind: 'root' }, S.t);
+      ensureStartKey(doc, { actor, kind: 'root' }, { p: [0, 0, 0], rot: [0, 0, 0] });
       setKey(doc, { actor, kind: 'root' }, S.t, { p: [o.root0[0] + d[0], o.root0[1] + d[1], o.root0[2] + d[2]], rot: cur?.rot || [0, 0, 0] });
       return;
     }
-    if (name === 'look') { setKey(doc, { actor, kind: 'look' }, S.t, { target: toBody(sol, p), space: 'body', weight: valueAt(doc, { actor, kind: 'look' }, S.t)?.weight ?? 1 }); return; }
+    if (name === 'look') { ensureStartKey(doc, { actor, kind: 'look' }, { target: toBody(sol, o.start), space: 'body', weight: 0 }); setKey(doc, { actor, kind: 'look' }, S.t, { target: toBody(sol, p), space: 'body', weight: valueAt(doc, { actor, kind: 'look' }, S.t)?.weight ?? 1 }); return; }
     if (name.startsWith('pole')) {
       const hd = name.slice(4), s = hd.slice(-1);
       const skel = skeletonOf(actor);
@@ -416,6 +429,8 @@ function dragHandle(o, e) {
     const ref = { actor, kind: 'ik', id: name };
     const cur = valueAt(doc, ref, S.t);
     const fields = { target: toBody(sol, p), space: 'body', weight: 1 };
+    // A new IK track starts from the FK pose at 0 s (weight 0) and blends to the dragged target.
+    ensureStartKey(doc, ref, { target: toBody(sol, o.start), space: 'body', weight: 0 });
     if (!cur || (cur.weight ?? 1) <= 0) {
       const skel = skeletonOf(actor), s = name.slice(-1);
       const root = sol.world.P[skel.idx(name.startsWith('hand') ? BODY.side[s].upper : BODY.side[s].thigh)];

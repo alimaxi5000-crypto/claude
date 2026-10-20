@@ -36,4 +36,9 @@ Locales.en = {
     dict_missing = 'The animation %s did not arrive in the game. Was the stream resource restarted?',
     dict_timeout = 'The animation %s could not be loaded (timeout).',
     model_invalid = 'Unknown ped model: %s',
+    test_usage = 'Usage: /%s <dict> [clip] [loop]  (no arguments: stop)',
+    test_missing = 'Dictionary %s does not exist (streamed? stream resource started?).',
+    test_noclip = 'Clip %s does not exist in dictionary %s.',
+    test_started = 'Playing %s / %s. Stop: /%s',
+    test_stopped = 'Stopped: %s / %s',
 }

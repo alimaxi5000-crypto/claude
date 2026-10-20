@@ -32,6 +32,7 @@ client_scripts {
     'client/peds.lua',
     'client/playback.lua',
     'client/main.lua',
+    'client/testcmd.lua',
 }
 
 ui_page 'web/index.html'

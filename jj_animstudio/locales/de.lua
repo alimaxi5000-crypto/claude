@@ -36,4 +36,9 @@ Locales.de = {
     dict_missing = 'Die Animation %s ist im Spiel nicht angekommen. Wurde die Stream-Resource neu gestartet?',
     dict_timeout = 'Die Animation %s konnte nicht geladen werden (Zeitüberschreitung).',
     model_invalid = 'Unbekanntes Ped-Modell: %s',
+    test_usage = 'Benutzung: /%s <dict> [clip] [loop]  (ohne Angabe: stoppen)',
+    test_missing = 'Dict %s gibt es nicht (gestreamt? Stream-Resource gestartet?).',
+    test_noclip = 'Clip %s gibt es im Dict %s nicht.',
+    test_started = 'Spiele %s / %s. Stoppen: /%s',
+    test_stopped = 'Gestoppt: %s / %s',
 }

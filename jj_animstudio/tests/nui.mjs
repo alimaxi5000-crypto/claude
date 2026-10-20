@@ -122,7 +122,8 @@ for (let i = 1; i <= 6; i++) await page.mouse.move(hand.x - 10 * i, hand.y - 18 
 await page.mouse.up();
 await page.waitForTimeout(150);
 doc = await docOf();
-ok(doc.tracks.a.ik?.handL?.length === 1 && doc.tracks.a.ik.handL[0].weight === 1, `click path: IK key for the left hand (${JSON.stringify(doc.tracks.a.ik)})`);
+const hl = doc.tracks.a.ik?.handL || [];
+ok(hl.length === 2 && hl[0].t === 0 && hl[0].weight === 0 && Math.abs(hl[1].t - 0.5) < 1e-3 && hl[1].weight === 1, `click path: IK key at 0.5 s plus automatic start key at 0 s (${JSON.stringify(doc.tracks.a.ik)})`);
 const lhand = await S(page, () => { const st = window.JJS_STUDIO; const sol = st.solveAt(st.S.t).a; return sol.world.P[st.S.skeletons.male.idx('SKEL_L_Hand')]; });
 ok(lhand[2] > -0.2, `click path: left hand moved up by IK (${lhand.map((x) => x.toFixed(2))})`);
 // Keyframe at another time: click the timeline ruler at 1.5 s, rotate the head.

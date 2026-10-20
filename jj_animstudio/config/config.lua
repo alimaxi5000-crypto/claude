@@ -12,6 +12,7 @@ Config = {}
 -- ============================================================
 Config.Locale = 'de'                 -- Language of chat messages and the studio UI. 'de' or 'en' | Default 'de'
 Config.Command = 'animstudio'        -- Chat command: /animstudio opens, /animstudio close closes | Default 'animstudio'
+Config.TestCommand = 'animtest'      -- Quick clip test: /animtest <dict> [clip] [loop], /animtest stops | Default 'animtest'
 Config.Debug = false                 -- true = extra F8 / server console output. Keep false on a live server.
 
 -- ============================================================
