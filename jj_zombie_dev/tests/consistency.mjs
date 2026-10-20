@@ -15,7 +15,7 @@ const errors = [], warnings = [];
 const err = (m) => errors.push(m), warn = (m) => warnings.push(m);
 const arr = (x) => (Array.isArray(x) ? x : []);   // empty Lua tables arrive as {}
 
-const dump = spawnSync('lua5.4', [path.join(HERE, 'lua', 'dump.lua'), RES], { encoding: 'utf8' });
+const dump = spawnSync(process.env.JJ_LUA || 'lua5.4', [path.join(HERE, 'lua', 'dump.lua'), RES], { encoding: 'utf8' });
 if (dump.status !== 0) { console.error(dump.stderr); process.exit(1); }
 const D = JSON.parse(dump.stdout);
 
@@ -34,7 +34,7 @@ const uiPage = (manifest.match(/ui_page\s+'([^']+)'/) || [])[1];
 for (const f of listed) if (!fs.existsSync(path.join(RES, f))) err(`manifest lists missing file ${f}`);
 if (uiPage && !listed.has(uiPage)) err(`ui_page ${uiPage} not in files {}`);
 const walk = (d) => fs.readdirSync(path.join(RES, d), { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]));
-const allFiles = walk('.').map((f) => f.replace(/^\.\//, ''));
+const allFiles = walk('.').map((f) => f.split(path.sep).join('/').replace(/^\.\//, ''));
 const luaFiles = allFiles.filter((f) => f.endsWith('.lua') && f !== 'fxmanifest.lua');
 for (const f of luaFiles) if (!listed.has(f)) err(`Lua file not in the manifest: ${f}`);
 for (const f of allFiles.filter((x) => x.startsWith('html/') && x !== 'html/dev.html')) if (!listed.has(f)) err(`NUI file not in files {}: ${f}`);

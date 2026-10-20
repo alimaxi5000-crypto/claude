@@ -1,0 +1,10 @@
+# fetched / built by setup.sh (never committed)
+node_modules/
+vendor/
+converter/ycdtool/out/
+converter/ycdtool/bin/
+converter/ycdtool/obj/
+# real skeletons are derived from Rockstar game files: local only
+skeletons/real/
+# test output
+build/

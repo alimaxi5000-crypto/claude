@@ -1,16 +1,16 @@
 // Generates PLACEHOLDER skeletons (approximate human proportions, GTA bone names/tags).
 // They are NOT the real GTA rest poses. They exist so the pipeline, the lab and all
-// tests run before the real skeletons are imported (see tools/import-skeleton.mjs).
+// tests run before the real skeletons are imported (see animkit import-skeleton).
 // Bone tags come from the official GET_PED_BONE_INDEX documentation (citizenfx/natives).
 //
-// Usage: node tools/make-placeholder-skeletons.mjs [--out anims-src/skeletons]
+// Usage: node animkit/core/placeholder.mjs [--out anims-src/skeletons]
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   vadd, vsub, vscale, vnorm, vcross, qaxis, qrot, qmul, qconj, qnorm, DEG,
-} from './animcore/math.mjs';
+} from './math.mjs';
 
 export const TAGS = {
   SKEL_ROOT: 0x0, SKEL_Pelvis: 0x2E28, SKEL_Spine_Root: 0xE0FD,
@@ -119,7 +119,7 @@ export function toSkeletonJson(id, model, J, groundZ, restRotation = () => [0, 0
   }
   return {
     id, model, source: 'placeholder',
-    note: 'PLACEHOLDER: approximate proportions, not the GTA rest pose. Replace via tools/import-skeleton.mjs.',
+    note: 'PLACEHOLDER: approximate proportions, not the GTA rest pose. Replace via animkit import-skeleton.',
     calib: { groundZ },
     bones,
   };
@@ -142,8 +142,7 @@ export function buildPlaceholder(kind, restRotation) {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const outIdx = process.argv.indexOf('--out');
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  const out = outIdx > 0 ? process.argv[outIdx + 1] : path.join(here, '..', 'anims-src', 'skeletons');
+  const out = outIdx > 0 ? process.argv[outIdx + 1] : process.cwd();
   fs.mkdirSync(out, { recursive: true });
   for (const k of ['male', 'female', 'zombie']) {
     const json = buildPlaceholder(k);

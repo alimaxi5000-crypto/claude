@@ -4,18 +4,16 @@
 //
 //   node tools/build-anims.mjs [--only <sourceName>] [--no-ycd] [--report-only]
 
+// The export steps (origin rebase, tracks, XML, ycdtool, read-back, Lua) are shared with the
+// studio converter in animkit/core/pipeline.mjs.
+
 import fs from 'node:fs';
 import path from 'node:path';
-import zlib from 'node:zlib';
-import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { loadSkeletons, DEV } from './skeletons.mjs';
-import { sampleScene, setAlignment, solFromLocals, FPS } from './animcore/scene.mjs';
-import { animatedBoneNames } from './animcore/skeleton.mjs';
-import { dictionaryXml, continuous } from './animcore/ycdxml.mjs';
-import { parseYcd } from './animcore/ycdreader.mjs';
-import { measureActor, measureScene, measureBlend } from './animcore/metrics.mjs';
-import { qangle, qaxis, qmul, qnorm, qrot, qconj, yawOf, vadd, vsub, DEG } from './animcore/math.mjs';
+import { sampleScene, setAlignment, FPS } from '../../animkit/core/scene.mjs';
+import { measureActor, measureScene, measureBlend } from '../../animkit/core/metrics.mjs';
+import { rebaseToOrigin, clipTracks, writeDictionaries, convertDirectory, ycdtoolStatus, readBackDictionary, luaVal } from '../../animkit/core/pipeline.mjs';
 
 const ROOT = path.resolve(DEV, '..');
 const RES = path.join(ROOT, 'jj_zombie_test');
@@ -23,7 +21,6 @@ const OUT_STREAM = path.join(RES, 'stream');
 const BUILD = path.join(DEV, 'build');
 const XML_DIR = path.join(BUILD, 'xml');
 const SRC_DIR = path.join(DEV, 'anims-src', 'clips');
-const YCDTOOL = path.join(DEV, 'tools', 'ycdtool', 'out', 'ycdtool.dll');
 
 const args = process.argv.slice(2);
 const flag = (n) => args.includes(n);
@@ -47,7 +44,6 @@ for (const f of files) {
 const only = opt('--only');
 
 // ------------------------------------------------------------------ sample
-const tag = (skel, name) => skel.bones[skel.idx(name)].tag;
 const exportClips = [];          // flat list of clips per dictionary
 const scenes = [];               // registry scenes
 const sampledByKey = new Map();  // `${source}:${variant}` -> sampled
@@ -59,20 +55,6 @@ function clipName(src, variant, actor, nActors) {
   if (variant.suffix) parts.push(variant.suffix);
   if (nActors > 1) parts.push(actor);
   return parts.join('_');
-}
-
-function filterBones(src, skel) {
-  const all = animatedBoneNames(skel);
-  if (!src.only) return { rot: all, rootPos: true };
-  const rot = [], set = new Set();
-  let rootPos = false;
-  for (const e of src.only) {
-    const [b, kind] = e.split(':');
-    if (kind === 'pos') { if (b === 'SKEL_ROOT') rootPos = true; continue; }
-    if (skel.has(b) && !set.has(b)) { rot.push(b); set.add(b); }
-    if (b === 'SKEL_ROOT' && kind !== 'rot') rootPos = true;
-  }
-  return { rot, rootPos };
 }
 
 for (const src of sources) {
@@ -98,41 +80,16 @@ for (const src of sources) {
       const skel = sampled.skeletons[actor];
       const frames = sampled.frames[actor];
       const name = clipName(src, variant, actor, sampled.actors.length);
-      const sel = filterBones(src, skel);
-      const tracks = [];
-      // Paired scenes: every actor starts at its own origin. The clip's mover is constant identity
-      // and the whole motion relative to the actor's frame-0 mover lives in SKEL_ROOT; the frame-0
-      // mover (position + yaw in the scene frame) is exported as origins[actor], and the client
-      // starts each actor in its own synced scene at sceneFrame * origin. Reason (in-game tests):
-      // GTA puts a synced-scene ped at the scene origin and ignores the clip's initial mover
-      // offset, so the zombie stood inside the victim, and with only its facing in the root bone it
-      // turned 180 deg during the blend-in. World poses are unchanged:
-      //   world = S * M(t) * root(t) = (S * M(0)) * (M(0)^-1 * M(t) * root(t)).
+      // Paired scenes: every actor starts at its own origin (see animkit/core/pipeline.mjs).
       const rebase = src.rebaseMover ?? sampled.actors.length > 1;
-      const rootI = skel.bones.findIndex((b) => b.parent === null || b.parent < 0);
       let out = frames;
       if (rebase) {
-        const m0 = frames[0].mover;
-        const up = qrot(m0.q, [0, 0, 1]);
-        if (Math.hypot(up[0], up[1], up[2] - 1) > 1e-6) fail(`${name}: frame-0 mover is not a pure yaw (origin needs x, y, z, yaw)`);
-        const qi = qconj(m0.q);
-        out = frames.map((s) => {
-          const local = s.local.slice();
-          local[rootI] = qnorm(qmul(qi, qmul(s.mover.q, s.local[rootI])));
-          const rootT = qrot(qi, vsub(vadd(s.mover.p, qrot(s.mover.q, s.rootT)), m0.p));
-          return { ...s, local, rootT, mover: { p: [0, 0, 0], q: [0, 0, 0, 1] } };
-        });
-        const r = (x, n = 4) => +x.toFixed(n);
-        sceneEntry.origins[actor] = { x: r(m0.p[0]), y: r(m0.p[1]), z: r(m0.p[2]), yaw: r(yawOf(m0.q) / DEG, 3) };
+        const rb = rebaseToOrigin(skel, frames);
+        for (const p of rb.problems) fail(`${name}: ${p}`);
+        out = rb.frames;
+        sceneEntry.origins[actor] = rb.origin;
       }
-      for (const b of sel.rot) {
-        tracks.push({ boneId: tag(skel, b), track: 1, bone: b, series: continuous(out.map((s) => s.local[skel.idx(b)])) });
-      }
-      if (sel.rootPos) tracks.push({ boneId: 0, track: 0, bone: 'SKEL_ROOT', series: out.map((s) => s.rootT) });
-      if (!src.noMover) {
-        tracks.push({ boneId: 0, track: 5, bone: 'mover', series: out.map((s) => s.mover.p) });
-        tracks.push({ boneId: 0, track: 6, bone: 'mover', series: continuous(out.map((s) => s.mover.q)) });
-      }
+      const tracks = clipTracks(skel, out, { only: src.only, noMover: src.noMover });
       const metrics = measureActor(skel, frames, { loop: src.loop, limits: { ...(src.limits || {}), ...((src.actorLimits || {})[actor] || {}) }, airborne: (src.airborne || {})[actor], noGround: src.noGround, allowSelfContact: (src.allowSelfContact || []).includes(actor) });
       const clip = {
         dict, name, actor, scene: key, skeleton: skel.id, duration: sampled.duration, frames: frames.length,
@@ -204,103 +161,29 @@ for (const [key, { src, variant }] of sampledByKey) {
 }
 
 // ------------------------------------------------------------------ write xml + ycd
-const dicts = new Map();
-for (const c of exportClips) {
-  if (!dicts.has(c.dict)) dicts.set(c.dict, []);
-  dicts.get(c.dict).push(c);
-}
-fs.mkdirSync(XML_DIR, { recursive: true });
-for (const f of fs.readdirSync(XML_DIR)) fs.unlinkSync(path.join(XML_DIR, f));
-for (const [dict, clips] of dicts) {
-  if (!/^[a-z0-9_]+$/.test(dict)) fail(`dictionary name '${dict}' must be lowercase [a-z0-9_]`);
-  fs.writeFileSync(path.join(XML_DIR, `${dict}.ycd.xml`), dictionaryXml(dict, clips));
-}
+const written = writeDictionaries(XML_DIR, exportClips);
+const dicts = written.dicts;
+for (const p of written.problems) fail(p);
 let readback = {};
 if (!flag('--no-ycd')) {
-  if (!fs.existsSync(YCDTOOL)) { fail(`ycdtool not built (${YCDTOOL}); run tools/setup.sh`); }
+  const st = ycdtoolStatus();
+  if (!st.ok) { fail(st.reason); }
   else {
     fs.mkdirSync(OUT_STREAM, { recursive: true });
     if (!only) for (const f of fs.readdirSync(OUT_STREAM)) if (/^jjz_.*\.ycd$/.test(f)) fs.unlinkSync(path.join(OUT_STREAM, f));
-    const r = spawnSync('dotnet', [YCDTOOL, 'batch', XML_DIR, OUT_STREAM], { encoding: 'utf8' });
-    if (r.status !== 0) fail(`ycdtool failed: ${r.stderr || r.stdout}`);
-    else log(r.stdout.trim().split('\n').map((l) => '  ' + l).join('\n'));
+    const r = convertDirectory(XML_DIR, OUT_STREAM);
+    if (!r.ok) fail(r.error);
+    else log(r.output.split(/\r?\n/).map((l) => '  ' + l.trim()).join('\n'));
     // Independent read-back and comparison with the source data.
     for (const [dict, clips] of dicts) {
-      const file = path.join(OUT_STREAM, `${dict}.ycd`);
-      if (!fs.existsSync(file)) { fail(`${dict}.ycd missing`); continue; }
-      const bytes = fs.readFileSync(file);
-      let parsed;
-      try { parsed = parseYcd(bytes, (u8) => zlib.inflateRawSync(u8)); } catch (e) { fail(`${dict}.ycd: reader error: ${e.message}`); continue; }
-      for (const e of parsed.errors) fail(`${dict}.ycd: ${e}`);
-      readback[dict] = { bytes: bytes.length, clips: parsed.clips.length, sysSize: parsed.header.sysSize };
-      const byName = new Map(parsed.clips.map((c) => [c.shortName, c]));
-      if (parsed.clips.length !== clips.length) fail(`${dict}.ycd: ${parsed.clips.length} clips, expected ${clips.length}`);
-      for (const c of clips) {
-        const pc = byName.get(c.name);
-        if (!pc) { fail(`${dict}.ycd: clip ${c.name} missing`); continue; }
-        const a = pc.anim;
-        if (!a) { fail(`${dict}/${c.name}: no animation`); continue; }
-        if (a.frames !== c.frames) fail(`${dict}/${c.name}: frames ${a.frames} != ${c.frames}`);
-        if (Math.abs(a.duration - c.duration) > 1e-4 || Math.abs(pc.end - c.duration) > 1e-4) fail(`${dict}/${c.name}: duration mismatch`);
-        if (a.sequences.length !== 1) fail(`${dict}/${c.name}: expected 1 sequence, got ${a.sequences.length}`);
-        const hasMover = c.tracks.some((t) => t.track >= 5);
-        if (((a.flags & 16) !== 0) !== hasMover) fail(`${dict}/${c.name}: root motion flag mismatch`);
-        const want = new Map(c.tracks.map((t) => [`${t.boneId}/${t.track}`, t]));
-        if (a.tracks.length !== want.size) fail(`${dict}/${c.name}: ${a.tracks.length} tracks, expected ${want.size}`);
-        let maxRot = 0, maxPos = 0;
-        for (const t of a.tracks) {
-          const src = want.get(`${t.boneId}/${t.track}`);
-          if (!src) { fail(`${dict}/${c.name}: unexpected track ${t.boneId}/${t.track}`); continue; }
-          for (let f = 0; f < c.frames; f++) {
-            const v = t.values[f], s = src.series[f];
-            if (t.track === 1 || t.track === 6) maxRot = Math.max(maxRot, qangle(v, s) / DEG);
-            else maxPos = Math.max(maxPos, Math.hypot(v[0] - s[0], v[1] - s[1], v[2] - s[2]));
-          }
-        }
-        // World-space read-back: the decoded tracks placed at the exported origin must give the
-        // solved source pose (proves the origin rebase changes nothing in the world).
-        let maxWorld = 0;
-        if (c.origin) {
-          const byTag = new Map(c.skel.bones.map((b, i) => [b.tag, i]));
-          const oq = qaxis([0, 0, 1], c.origin.yaw * DEG), op = [c.origin.x, c.origin.y, c.origin.z];
-          for (let f = 0; f < c.frames; f++) {
-            const local = [];
-            let rootT = null, mp = [0, 0, 0], mq = [0, 0, 0, 1];
-            for (const t of a.tracks) {
-              const v = t.values[f];
-              if (t.track === 1 && byTag.has(t.boneId)) local[byTag.get(t.boneId)] = v;
-              else if (t.track === 0 && t.boneId === 0) rootT = v;
-              else if (t.track === 5) mp = v;
-              else if (t.track === 6) mq = v;
-            }
-            const sol = solFromLocals(c.skel, local, rootT, { p: vadd(op, qrot(oq, mp)), q: qnorm(qmul(oq, mq)) });
-            const ref = c.solved[f].world.P;
-            for (let i = 0; i < ref.length; i++) maxWorld = Math.max(maxWorld, Math.hypot(sol.world.P[i][0] - ref[i][0], sol.world.P[i][1] - ref[i][1], sol.world.P[i][2] - ref[i][2]));
-          }
-          if (maxWorld > 0.002) fail(`${dict}/${c.name}: world pose at origin differs from the source by ${(maxWorld * 1000).toFixed(2)} mm`);
-        }
-        c.readback = { maxRotDeg: maxRot, maxPosM: maxPos, maxWorldM: c.origin ? maxWorld : undefined };
-        if (maxRot > 0.05) fail(`${dict}/${c.name}: rotation read-back error ${maxRot.toFixed(4)} deg`);
-        if (maxPos > 0.0005) fail(`${dict}/${c.name}: position read-back error ${(maxPos * 1000).toFixed(3)} mm`);
-      }
+      const rb = readBackDictionary(path.join(OUT_STREAM, `${dict}.ycd`), clips, dict);
+      for (const p of rb.problems) fail(p);
+      if (rb.info) readback[dict] = rb.info;
     }
   }
 }
 
 // ------------------------------------------------------------------ Lua registry data
-const luaStr = (s) => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-const luaNum = (n) => (Number.isInteger(n) ? String(n) : (+n.toFixed(4)).toString());
-function luaVal(v, ind = '') {
-  if (v === null || v === undefined) return 'nil';
-  if (typeof v === 'number') return luaNum(v);
-  if (typeof v === 'boolean') return v ? 'true' : 'false';
-  if (typeof v === 'string') return luaStr(v);
-  if (Array.isArray(v)) return `{ ${v.map((x) => luaVal(x, ind)).join(', ')} }`;
-  const keys = Object.keys(v).sort();
-  if (!keys.length) return '{}';
-  const inner = keys.map((k) => `${ind}    ${/^[A-Za-z_][A-Za-z0-9_]*$/.test(k) ? k : `[${luaStr(k)}]`} = ${luaVal(v[k], ind + '    ')},`).join('\n');
-  return `{\n${inner}\n${ind}}`;
-}
 const luaData = {
   build: { skeletons: skelInfo, fps: FPS, dicts: Object.fromEntries([...dicts].map(([d, c]) => [d, c.length])) },
   scenes: Object.fromEntries(scenes.map((s) => [s.variant ? `${s.name}:${s.variant}` : s.name, {

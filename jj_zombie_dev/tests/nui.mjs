@@ -4,19 +4,13 @@
 //   node tests/nui.mjs
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { launchBrowser } from '../../animkit/cli/lib/browser.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEV = path.resolve(HERE, '..');
 const RES = path.resolve(DEV, '..', 'jj_zombie_test');
 const OUT = path.join(DEV, 'captures', 'nui');
-const require = createRequire(import.meta.url);
-let chromium;
-try { ({ chromium } = require('playwright')); } catch {
-  ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.js').catch(() => ({})));
-}
-if (!chromium) { console.error('playwright not available'); process.exit(2); }
 fs.mkdirSync(OUT, { recursive: true });
 
 const RESOLUTIONS = [[1366, 768], [1920, 1080], [2560, 1440], [3440, 1440], [3840, 2160]];
@@ -28,7 +22,8 @@ const STATES = [
   { name: 'result_bite', msgs: [{ type: 'fin:result', result: 'bite', text: 'Gebissen!' }] },
 ];
 
-const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
+const browser = await launchBrowser({ args: ['--autoplay-policy=no-user-gesture-required'] }, import.meta.url);
+if (!browser) { console.error('playwright not available'); process.exit(2); }
 const failures = [];
 let shots = 0;
 for (const [w, h] of RESOLUTIONS) {
@@ -36,7 +31,7 @@ for (const [w, h] of RESOLUTIONS) {
   const errors = [];
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.goto('file://' + path.join(RES, 'html', 'index.html'));
+  await page.goto(pathToFileURL(path.join(RES, 'html', 'index.html')).href);
   // Game-like backdrop (in game the NUI page is transparent over the 3D scene).
   await page.addStyleTag({ content: 'html,body{background:#4b5563 linear-gradient(160deg,#55606d,#1f2329) !important;}' });
   for (const st of STATES) {

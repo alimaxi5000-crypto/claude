@@ -8,15 +8,9 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import { DEV } from './skeletons.mjs';
-
-const require = createRequire(import.meta.url);
-let chromium;
-try { ({ chromium } = require('playwright')); } catch {
-  ({ chromium } = await import('/opt/node22/lib/node_modules/playwright/index.js').catch(() => ({})));
-}
-if (!chromium) { console.error('playwright not available (npm i -g playwright)'); process.exit(2); }
+import { launchBrowser } from '../../animkit/cli/lib/browser.mjs';
 
 const args = process.argv.slice(2);
 const opt = (n, d = null) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : d; };
@@ -26,13 +20,13 @@ const source = opt('--source', 'src');
 const [cols, rows] = opt('--grid', '4x3').split('x').map(Number);
 fs.mkdirSync(outDir, { recursive: true });
 
-const exe = fs.existsSync('/opt/pw-browsers/chromium') ? undefined : undefined;
-const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'], executablePath: exe });
+const browser = await launchBrowser({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] }, import.meta.url);
+if (!browser) { console.error('playwright not available (npm i -g playwright)'); process.exit(2); }
 const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
 const errors = [];
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
 page.on('pageerror', (e) => errors.push(String(e)));
-await page.goto('file://' + path.join(DEV, 'animlab', 'index.html'));
+await page.goto(pathToFileURL(path.join(DEV, 'animlab', 'index.html')).href);
 await page.waitForFunction(() => !!window.JJZ_LAB, null, { timeout: 30000 });
 
 const scene = opt('--scene');
