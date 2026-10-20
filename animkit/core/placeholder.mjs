@@ -3,11 +3,8 @@
 // tests run before the real skeletons are imported (see animkit import-skeleton).
 // Bone tags come from the official GET_PED_BONE_INDEX documentation (citizenfx/natives).
 //
-// Usage: node animkit/core/placeholder.mjs [--out anims-src/skeletons]
+// Pure module (also bundled into the studio NUI as a fallback when no skeleton is available).
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   vadd, vsub, vscale, vnorm, vcross, qaxis, qrot, qmul, qconj, qnorm, DEG,
 } from './math.mjs';
@@ -138,15 +135,4 @@ export function buildPlaceholder(kind, restRotation) {
   const J = body(p);
   const model = kind === 'female' ? 'mp_f_freemode_01' : kind === 'zombie' ? 'u_m_y_zombie_01' : 'mp_m_freemode_01';
   return toSkeletonJson(`placeholder_${kind}`, model, J, p.groundZ, restRotation);
-}
-
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
-  const outIdx = process.argv.indexOf('--out');
-  const out = outIdx > 0 ? process.argv[outIdx + 1] : process.cwd();
-  fs.mkdirSync(out, { recursive: true });
-  for (const k of ['male', 'female', 'zombie']) {
-    const json = buildPlaceholder(k);
-    fs.writeFileSync(path.join(out, `placeholder_${k}.json`), JSON.stringify(json, null, 1));
-    console.log(`wrote placeholder_${k}.json (${json.bones.length} bones)`);
-  }
 }

@@ -28,6 +28,11 @@ export default async function watch(args) {
   const skelInfo = info;
   log(`animkit watch ${VERSION} | studio ${studio} | stream ${stream}`);
   log(`skeletons: ${Object.entries(info).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  // The studio NUI edits on exactly these skeletons: data/skeletons/<key>.json (derived from game
+  // files when real skeletons are imported; sent only to studio users, never committed).
+  const skelDir = path.join(P.data, 'skeletons');
+  fs.mkdirSync(skelDir, { recursive: true });
+  for (const [k, s] of Object.entries(skeletons)) fs.writeFileSync(path.join(skelDir, `${k}.json`), JSON.stringify({ ...s.toJSON(), info: info[k] }));
   const workRoot = path.join(ANIMKIT, 'build', 'jobs');
   fs.mkdirSync(workRoot, { recursive: true });
   const interval = Math.max(100, +(opt(args, '--interval') || 250));

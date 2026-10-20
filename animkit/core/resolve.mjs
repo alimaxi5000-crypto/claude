@@ -61,6 +61,25 @@ function segment(ks, t) {
   return { a: l, b: l, u: 0 };
 }
 
+// Interpolated key of one track at time t (same rules as the solver): numbers and number arrays
+// are blended with the arriving key's ease, other fields come from the nearer key. Returns null
+// for an empty track. close: loop-close the track (see prepare).
+export function keyAt(keys, t, duration, close = false) {
+  const ks = prepare(keys, duration, close);
+  if (!ks.length) return null;
+  const { a, b, u } = segment(ks, t);
+  const out = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (k === 't' || k === 'virtual') continue;
+    const va = a[k] ?? b[k], vb = b[k] ?? a[k];
+    if (typeof va === 'number' && typeof vb === 'number') out[k] = lerpN(va, vb, u);
+    else if (Array.isArray(va) && Array.isArray(vb) && va.length === vb.length && va.every((x) => typeof x === 'number')) out[k] = lerpA(va, vb, u);
+    else out[k] = u < 0.5 ? va : vb;
+  }
+  out.t = t;
+  return out;
+}
+
 // Resolve every keyframe track of one actor into a function t -> partial rig pose (without
 // stuck contacts and foot locks, which need solved positions).
 function actorBase(doc, id, skel) {
