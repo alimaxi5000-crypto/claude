@@ -204,6 +204,7 @@ Screenshots machen und mit dem Kontaktbogen vergleichen (siehe INGAME_TEST.md).
 
 - Spuren: 0 Knochen-Translation, 1 Knochen-Rotation, 5 Mover-Translation, 6 Mover-Rotation. BoneIds nach `boneId | (track << 16)` sortiert.
 - Rotationen sind lokale Rotationen relativ zum Elternknochen, mit Vorzeichen-Kontinuität. Statische Spuren haben w ≥ 0.
+- Paar-Szenen (mehr als ein Akteur): Die Mover-Drehung wird in die `SKEL_ROOT`-Rotation/-Position eingebacken, die Mover-Spur trägt nur die Position. Grund: Im Spiel wurde die Mover-Drehung in vernetzten Synced Scenes nicht wie erwartet angewendet (Zombie stand 180° verdreht). Abschaltbar pro Quelle mit `bakeMoverRotation: false`.
 - Animations-Flag 16 = Wurzelbewegung vorhanden. `SequenceFrameLimit = Frames + 30`.
 - Clip-/Dict-Namen klein, Hash `joaat` (kleingeschrieben). 30 fps.
 

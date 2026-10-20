@@ -81,7 +81,7 @@ Zombie springt aus 1 m an, schlägt beide Hände auf den Schultergürtel (wo er 
 - Clips (erste Variante): victim: `fin_grab_d0_m_victim`, zombie: `fin_grab_d0_m_zombie`
 - Herkunft: selbst erstellt, Quelle `jj_zombie_dev/anims-src/clips/finisher_acts.mjs` (prozedural auf das Skelett gelöst); Lizenz wie das Projekt. Keine fremden Animationsdaten; die Ruhe-Orientierungen der GTA-Knochen stecken, wie bei jeder GTA-Animation, in den lokalen Rotationen
 - Knappste Metriken (erste Variante): wrist 73.082 / 88 (victim); footSlide 0.287 / 0.35 (victim); neck 48.670 / 85 (victim)
-- Kontaktbögen: [fin_grab_d0_m_shoulder_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d0_m_shoulder_src.png), [fin_grab_d0_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d0_m_side_src.png), [fin_grab_d4_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d4_m_side_src.png), [fin_grab_d4_m_top_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d4_m_top_src.png)
+- Kontaktbögen: [fin_grab_d0_m_shoulder_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d0_m_shoulder_src.png), [fin_grab_d0_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d0_m_side_src.png), [fin_grab_d2_f_side_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d2_f_side_src.png), [fin_grab_d2_f_top_src.png](../../jj_zombie_dev/captures/lab/fin_grab_d2_f_top_src.png)
 
 ## fin_shove
 
@@ -94,7 +94,7 @@ Erfolg: Ausholen, explosiver Stoß aus den Beinen (Ferse hebt ab), Zombie fliegt
 - Clips (erste Variante): victim: `fin_shove_m_victim`, zombie: `fin_shove_m_zombie`
 - Herkunft: selbst erstellt, Quelle `jj_zombie_dev/anims-src/clips/finisher_acts.mjs` (prozedural auf das Skelett gelöst); Lizenz wie das Projekt. Keine fremden Animationsdaten; die Ruhe-Orientierungen der GTA-Knochen stecken, wie bei jeder GTA-Animation, in den lokalen Rotationen
 - Knappste Metriken (erste Variante): linVel 8.579 / 10 (zombie); wrist 73.361 / 88 (victim); wristRoll 75.415 / 120 (victim)
-- Kontaktbögen: [fin_shove_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_shove_m_side_src.png)
+- Kontaktbögen: [fin_shove_m_front_src.png](../../jj_zombie_dev/captures/lab/fin_shove_m_front_src.png), [fin_shove_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_shove_m_side_src.png)
 
 ## fin_bite
 
@@ -107,7 +107,7 @@ Niederlage: Arme knicken ein, Biss in die linke Halsseite mit Reißen, Schrei, H
 - Clips (erste Variante): victim: `fin_bite_m_victim`, zombie: `fin_bite_m_zombie`
 - Herkunft: selbst erstellt, Quelle `jj_zombie_dev/anims-src/clips/finisher_acts.mjs` (prozedural auf das Skelett gelöst); Lizenz wie das Projekt. Keine fremden Animationsdaten; die Ruhe-Orientierungen der GTA-Knochen stecken, wie bei jeder GTA-Animation, in den lokalen Rotationen
 - Knappste Metriken (erste Variante): wrist 83.187 / 88 (zombie); linVel 9.666 / 11 (victim); angVel 2312.260 / 2800 (victim)
-- Kontaktbögen: [fin_bite_m_front_src.png](../../jj_zombie_dev/captures/lab/fin_bite_m_front_src.png), [fin_bite_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_bite_m_side_src.png), [fin_bite_m_side_src_pen.png](../../jj_zombie_dev/captures/lab/fin_bite_m_side_src_pen.png), [fin_bite_m_top_src_pen.png](../../jj_zombie_dev/captures/lab/fin_bite_m_top_src_pen.png)
+- Kontaktbögen: [fin_bite_f_front_src.png](../../jj_zombie_dev/captures/lab/fin_bite_f_front_src.png), [fin_bite_f_side_src.png](../../jj_zombie_dev/captures/lab/fin_bite_f_side_src.png), [fin_bite_m_front_src.png](../../jj_zombie_dev/captures/lab/fin_bite_m_front_src.png), [fin_bite_m_side_src.png](../../jj_zombie_dev/captures/lab/fin_bite_m_side_src.png)
 
 ## fin_recover
 

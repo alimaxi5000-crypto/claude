@@ -318,12 +318,26 @@ function ZAI.preload(on)
     end
 end
 
+-- Facing of the body from the shoulders (the finisher clips carry the zombie's facing in the
+-- root bone, so after a scene the entity heading can differ from where the body looks).
+local function alignHeadingToBody(ent)
+    local l = GetPedBoneCoords(ent, 64729, 0.0, 0.0, 0.0)   -- SKEL_L_Clavicle
+    local r = GetPedBoneCoords(ent, 10706, 0.0, 0.0, 0.0)   -- SKEL_R_Clavicle
+    local rx, ry = r.x - l.x, r.y - l.y
+    if rx * rx + ry * ry < 1e-4 then return end
+    -- forward = up x right
+    SetEntityHeading(ent, U.headingOf(-ry, rx))
+end
+
 -- The finisher ended for this zombie: own AI may run again.
 AddStateBagChangeHandler(ST.Fin, nil, function(bagName, _, value)
     if value ~= 0 and value ~= nil then return end
     local ent = GetEntityFromStateBagName(bagName)
     local info = ent ~= 0 and ZAI.list[ent] or nil
     if info then info.holdFin = nil; info.mode = nil end
+    if ent ~= 0 and DoesEntityExist(ent) and ownsIt(ent) and not IsPedRagdoll(ent) and not IsPedDeadOrDying(ent, true) then
+        alignHeadingToBody(ent)
+    end
 end)
 
 -- ------------------------------------------------------------------ main thread

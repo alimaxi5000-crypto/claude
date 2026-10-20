@@ -15,7 +15,7 @@ import { animatedBoneNames } from './animcore/skeleton.mjs';
 import { dictionaryXml, continuous } from './animcore/ycdxml.mjs';
 import { parseYcd } from './animcore/ycdreader.mjs';
 import { measureActor, measureScene, measureBlend } from './animcore/metrics.mjs';
-import { qangle, DEG } from './animcore/math.mjs';
+import { qangle, qmul, qnorm, qrot, DEG } from './animcore/math.mjs';
 
 const ROOT = path.resolve(DEV, '..');
 const RES = path.join(ROOT, 'jj_zombie_test');
@@ -100,13 +100,25 @@ for (const src of sources) {
       const name = clipName(src, variant, actor, sampled.actors.length);
       const sel = filterBones(src, skel);
       const tracks = [];
+      // Paired scenes: the actor's facing is baked into SKEL_ROOT and the mover keeps only its
+      // translation. In game, the mover ROTATION of a networked synced scene is not applied the
+      // way the mover translation is (first in-game test: the zombie, whose mover faces -Y, stood
+      // 180 deg turned while the victim with an identity mover was right). World poses are
+      // identical either way: world = mover.p + R(mover) * (root transform).
+      const bake = src.bakeMoverRotation ?? sampled.actors.length > 1;
+      const rootI = skel.bones.findIndex((b) => b.parent === null || b.parent < 0);
+      const out = !bake ? frames : frames.map((s) => {
+        const local = s.local.slice();
+        local[rootI] = qnorm(qmul(s.mover.q, s.local[rootI]));
+        return { ...s, local, rootT: qrot(s.mover.q, s.rootT), mover: { p: s.mover.p, q: [0, 0, 0, 1] } };
+      });
       for (const b of sel.rot) {
-        tracks.push({ boneId: tag(skel, b), track: 1, bone: b, series: continuous(frames.map((s) => s.local[skel.idx(b)])) });
+        tracks.push({ boneId: tag(skel, b), track: 1, bone: b, series: continuous(out.map((s) => s.local[skel.idx(b)])) });
       }
-      if (sel.rootPos) tracks.push({ boneId: 0, track: 0, bone: 'SKEL_ROOT', series: frames.map((s) => s.rootT) });
+      if (sel.rootPos) tracks.push({ boneId: 0, track: 0, bone: 'SKEL_ROOT', series: out.map((s) => s.rootT) });
       if (!src.noMover) {
-        tracks.push({ boneId: 0, track: 5, bone: 'mover', series: frames.map((s) => s.mover.p) });
-        tracks.push({ boneId: 0, track: 6, bone: 'mover', series: continuous(frames.map((s) => s.mover.q)) });
+        tracks.push({ boneId: 0, track: 5, bone: 'mover', series: out.map((s) => s.mover.p) });
+        tracks.push({ boneId: 0, track: 6, bone: 'mover', series: continuous(out.map((s) => s.mover.q)) });
       }
       const metrics = measureActor(skel, frames, { loop: src.loop, limits: { ...(src.limits || {}), ...((src.actorLimits || {})[actor] || {}) }, airborne: (src.airborne || {})[actor], noGround: src.noGround, allowSelfContact: (src.allowSelfContact || []).includes(actor) });
       const clip = {

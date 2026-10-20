@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2
+
+### Behoben
+- Zombie im Finisher um 180° verdreht: GTA wendet in vernetzten Synced Scenes die Mover-Drehung
+  der Clips nicht so an wie die Mover-Position. Die Blickrichtung jedes Akteurs in Paar-Szenen
+  steckt jetzt im Wurzelknochen (SKEL_ROOT), der Mover trägt nur noch die Position.
+- Nach einem Finisher-Abbruch richtet der Besitzer die Entity-Blickrichtung des Zombies an seinem
+  Körper aus (kein 180°-Sprung).
+
 ## 0.1.1 (nach dem ersten Spieltest)
 
 ### Behoben
