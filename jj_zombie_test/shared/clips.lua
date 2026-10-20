@@ -8,7 +8,9 @@ local function data()
     return ClipData and ClipData.scenes or {}
 end
 
--- Raw registry entry: { name, variant, dict, duration, loop, actors = { role = clipName }, events, meta, playback }
+-- Raw registry entry: { name, variant, dict, duration, loop, actors = { role = clipName }, events, meta, playback,
+--   origins = { role = { x, y, z, yaw } } }. origins (paired scenes only): start transform of each actor
+--   in the scene frame; the actor's clip starts at identity there (see client/finisher.lua).
 function Clips.entry(name, variant)
     local key = (variant and variant ~= '') and (name .. ':' .. variant) or name
     local e = data()[key]

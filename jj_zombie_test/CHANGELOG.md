@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.1.3
+
+### Behoben (Grundursache der falschen Ausrichtung)
+- Zombie stand beim Packen erst mit dem Rücken zum Spieler, drehte sich dann um und steckte im
+  Spieler: GTA setzt einen Ped in einer Synced Scene auf den Ursprung seiner Szene und ignoriert
+  den Startversatz des Clips. Beide Akteure lagen also im selben Punkt, und die 180°-Drehung aus
+  0.1.2 wurde beim Einblenden sichtbar.
+- Neu: Jeder Paar-Clip beginnt bei der Identität, jeder Akteur spielt in einer **eigenen** Szene an
+  seinem Startpunkt (Opfer dort, wo es steht; Zombie 1 m vor ihm, mit Blick zu ihm). Die Abweichung
+  zwischen echter Lage und 45°-Variante ist auf beide Körper verteilt (je höchstens ~11°) und wird
+  in ~0,25 s weich ausgeglichen, bevor die Hände auf den Schultern landen.
+- Übergang Grab → Ringen ohne Schwenk und ohne Lücke: Der Grab hält sein letztes Bild, Akteure mit
+  neuem Startpunkt wechseln in einem Frame (gleiche Weltpose), alle anderen Übergänge werden
+  überblendet.
+- Abbruch mitten im Grab: Der Spieler behält die Blickrichtung seines Körpers.
+- Die Heading-Korrektur des Zombies nach dem Finisher aus 0.1.2 entfällt (nicht mehr nötig).
+
+### Tests
+- Build: Die dekodierte `.ycd` am Startpunkt muss die Quellpose ergeben (alle 52 Paar-Clips,
+  max. 0,03 mm). Loops und Nachfolger müssen dieselben Startpunkte haben.
+- Neu `tests/lua/test_client_finisher.lua` (88 Prüfungen): Platzierung, Blickrichtung, Abstände und
+  Übergänge für Griffe von vorn, hinten, seitlich und im ungünstigsten Winkel. Gegen den Stand
+  0.1.2 schlägt der Test an ("zombie starts facing the victim").
+
 ## 0.1.2
 
 ### Behoben

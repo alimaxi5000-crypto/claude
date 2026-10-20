@@ -65,6 +65,9 @@ step consistency node "$HERE/consistency.mjs"
 # 4. Server logic with mocked natives (flows, aborts, input validation, fuzz).
 step server_logic lua5.4 "$HERE/lua/test_server.lua" "$RES"
 
+# 4b. Victim-side finisher flow with stubbed client natives (scene placement and chaining).
+step client_finisher lua5.4 "$HERE/lua/test_client_finisher.lua" "$RES"
+
 # 5. Benchmarks (server manager and client manager with 0 / 10 / 30 / 100 zombies).
 step bench_server lua5.4 "$HERE/lua/bench_server.lua" "$RES"
 step bench_client lua5.4 "$HERE/lua/bench_client.lua" "$RES"

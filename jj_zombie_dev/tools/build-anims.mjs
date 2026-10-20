@@ -10,12 +10,12 @@ import zlib from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { loadSkeletons, DEV } from './skeletons.mjs';
-import { sampleScene, setAlignment, FPS } from './animcore/scene.mjs';
+import { sampleScene, setAlignment, solFromLocals, FPS } from './animcore/scene.mjs';
 import { animatedBoneNames } from './animcore/skeleton.mjs';
 import { dictionaryXml, continuous } from './animcore/ycdxml.mjs';
 import { parseYcd } from './animcore/ycdreader.mjs';
 import { measureActor, measureScene, measureBlend } from './animcore/metrics.mjs';
-import { qangle, qmul, qnorm, qrot, DEG } from './animcore/math.mjs';
+import { qangle, qaxis, qmul, qnorm, qrot, qconj, yawOf, vadd, vsub, DEG } from './animcore/math.mjs';
 
 const ROOT = path.resolve(DEV, '..');
 const RES = path.join(ROOT, 'jj_zombie_test');
@@ -86,7 +86,7 @@ for (const src of sources) {
     const sceneEntry = {
       key, name: src.name, variant: variant.suffix || '', dict, duration: +sampled.duration.toFixed(4),
       loop: !!src.loop, actors: {}, events: (typeof src.events === 'function' ? src.events(variant) : src.events) || [], meta: { ...(variant.meta || {}), ...(src.meta || {}) },
-      playback: src.playback || {}, file: src.file,
+      playback: src.playback || {}, file: src.file, origins: {},
       // Metric settings of this clip source, so the lab's live metrics judge exactly like the build.
       checks: {
         limits: src.limits || {}, actorLimits: src.actorLimits || {}, airborne: src.airborne || {}, noGround: !!src.noGround,
@@ -100,18 +100,31 @@ for (const src of sources) {
       const name = clipName(src, variant, actor, sampled.actors.length);
       const sel = filterBones(src, skel);
       const tracks = [];
-      // Paired scenes: the actor's facing is baked into SKEL_ROOT and the mover keeps only its
-      // translation. In game, the mover ROTATION of a networked synced scene is not applied the
-      // way the mover translation is (first in-game test: the zombie, whose mover faces -Y, stood
-      // 180 deg turned while the victim with an identity mover was right). World poses are
-      // identical either way: world = mover.p + R(mover) * (root transform).
-      const bake = src.bakeMoverRotation ?? sampled.actors.length > 1;
+      // Paired scenes: every actor starts at its own origin. The clip's mover is constant identity
+      // and the whole motion relative to the actor's frame-0 mover lives in SKEL_ROOT; the frame-0
+      // mover (position + yaw in the scene frame) is exported as origins[actor], and the client
+      // starts each actor in its own synced scene at sceneFrame * origin. Reason (in-game tests):
+      // GTA puts a synced-scene ped at the scene origin and ignores the clip's initial mover
+      // offset, so the zombie stood inside the victim, and with only its facing in the root bone it
+      // turned 180 deg during the blend-in. World poses are unchanged:
+      //   world = S * M(t) * root(t) = (S * M(0)) * (M(0)^-1 * M(t) * root(t)).
+      const rebase = src.rebaseMover ?? sampled.actors.length > 1;
       const rootI = skel.bones.findIndex((b) => b.parent === null || b.parent < 0);
-      const out = !bake ? frames : frames.map((s) => {
-        const local = s.local.slice();
-        local[rootI] = qnorm(qmul(s.mover.q, s.local[rootI]));
-        return { ...s, local, rootT: qrot(s.mover.q, s.rootT), mover: { p: s.mover.p, q: [0, 0, 0, 1] } };
-      });
+      let out = frames;
+      if (rebase) {
+        const m0 = frames[0].mover;
+        const up = qrot(m0.q, [0, 0, 1]);
+        if (Math.hypot(up[0], up[1], up[2] - 1) > 1e-6) fail(`${name}: frame-0 mover is not a pure yaw (origin needs x, y, z, yaw)`);
+        const qi = qconj(m0.q);
+        out = frames.map((s) => {
+          const local = s.local.slice();
+          local[rootI] = qnorm(qmul(qi, qmul(s.mover.q, s.local[rootI])));
+          const rootT = qrot(qi, vsub(vadd(s.mover.p, qrot(s.mover.q, s.rootT)), m0.p));
+          return { ...s, local, rootT, mover: { p: [0, 0, 0], q: [0, 0, 0, 1] } };
+        });
+        const r = (x, n = 4) => +x.toFixed(n);
+        sceneEntry.origins[actor] = { x: r(m0.p[0]), y: r(m0.p[1]), z: r(m0.p[2]), yaw: r(yawOf(m0.q) / DEG, 3) };
+      }
       for (const b of sel.rot) {
         tracks.push({ boneId: tag(skel, b), track: 1, bone: b, series: continuous(out.map((s) => s.local[skel.idx(b)])) });
       }
@@ -123,7 +136,7 @@ for (const src of sources) {
       const metrics = measureActor(skel, frames, { loop: src.loop, limits: { ...(src.limits || {}), ...((src.actorLimits || {})[actor] || {}) }, airborne: (src.airborne || {})[actor], noGround: src.noGround, allowSelfContact: (src.allowSelfContact || []).includes(actor) });
       const clip = {
         dict, name, actor, scene: key, skeleton: skel.id, duration: sampled.duration, frames: frames.length,
-        loop: !!src.loop, tracks, metrics, solved: frames, skel,
+        loop: !!src.loop, tracks, metrics, solved: frames, skel, origin: sceneEntry.origins[actor] || null,
       };
       exportClips.push(clip);
       sceneEntry.actors[actor] = name;
@@ -168,6 +181,24 @@ for (const [key, { src, variant, sampled }] of sampledByKey) {
       const m = measureBlend(skel, prev.sampled.frames[actor].at(-1), sampled.frames[actor][0], src.limits);
       blends.push({ from: prevKey, to: key, actor, ...m });
       if (!m.ok) for (const [k, v] of Object.entries(m.items)) if (!v.pass) fail(`blend ${prevKey} -> ${key} (${actor}): ${k} = ${v.value} > ${v.limit} (${v.detail})`);
+    }
+  }
+}
+
+// Actor frames across transitions. The client blends between two scenes only when an actor keeps
+// its origin (same entity frame); otherwise it switches instantly, which is seamless only at the
+// matching end/start poses that leadsTo verifies. A looped clip can be left at any phase (struggle
+// -> result), so all of its successors must keep every actor's origin.
+const sceneByKey = new Map(scenes.map((s) => [s.key, s]));
+const sameOrigin = (a, b) => !a || !b || (Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 1e-3 && Math.abs(((a.yaw - b.yaw + 540) % 360) - 180) < 0.05);
+for (const [key, { src, variant }] of sampledByKey) {
+  if (!src.loop || !src.leadsTo) continue;
+  const from = sceneByKey.get(key);
+  for (const next of src.leadsTo(variant)) {
+    const to = sceneByKey.get(`${next.name}:${next.variant ?? ''}`);
+    if (!to) continue;
+    for (const actor of Object.keys(from.origins)) {
+      if (!sameOrigin(from.origins[actor], to.origins[actor])) fail(`${key} -> ${to.key} (${actor}): looped clip and successor have different origins ${JSON.stringify(from.origins[actor])} vs ${JSON.stringify(to.origins[actor])}`);
     }
   }
 }
@@ -226,7 +257,29 @@ if (!flag('--no-ycd')) {
             else maxPos = Math.max(maxPos, Math.hypot(v[0] - s[0], v[1] - s[1], v[2] - s[2]));
           }
         }
-        c.readback = { maxRotDeg: maxRot, maxPosM: maxPos };
+        // World-space read-back: the decoded tracks placed at the exported origin must give the
+        // solved source pose (proves the origin rebase changes nothing in the world).
+        let maxWorld = 0;
+        if (c.origin) {
+          const byTag = new Map(c.skel.bones.map((b, i) => [b.tag, i]));
+          const oq = qaxis([0, 0, 1], c.origin.yaw * DEG), op = [c.origin.x, c.origin.y, c.origin.z];
+          for (let f = 0; f < c.frames; f++) {
+            const local = [];
+            let rootT = null, mp = [0, 0, 0], mq = [0, 0, 0, 1];
+            for (const t of a.tracks) {
+              const v = t.values[f];
+              if (t.track === 1 && byTag.has(t.boneId)) local[byTag.get(t.boneId)] = v;
+              else if (t.track === 0 && t.boneId === 0) rootT = v;
+              else if (t.track === 5) mp = v;
+              else if (t.track === 6) mq = v;
+            }
+            const sol = solFromLocals(c.skel, local, rootT, { p: vadd(op, qrot(oq, mp)), q: qnorm(qmul(oq, mq)) });
+            const ref = c.solved[f].world.P;
+            for (let i = 0; i < ref.length; i++) maxWorld = Math.max(maxWorld, Math.hypot(sol.world.P[i][0] - ref[i][0], sol.world.P[i][1] - ref[i][1], sol.world.P[i][2] - ref[i][2]));
+          }
+          if (maxWorld > 0.002) fail(`${dict}/${c.name}: world pose at origin differs from the source by ${(maxWorld * 1000).toFixed(2)} mm`);
+        }
+        c.readback = { maxRotDeg: maxRot, maxPosM: maxPos, maxWorldM: c.origin ? maxWorld : undefined };
         if (maxRot > 0.05) fail(`${dict}/${c.name}: rotation read-back error ${maxRot.toFixed(4)} deg`);
         if (maxPos > 0.0005) fail(`${dict}/${c.name}: position read-back error ${(maxPos * 1000).toFixed(3)} mm`);
       }
@@ -253,7 +306,7 @@ const luaData = {
   scenes: Object.fromEntries(scenes.map((s) => [s.variant ? `${s.name}:${s.variant}` : s.name, {
     name: s.name, variant: s.variant, dict: s.dict, duration: s.duration, loop: s.loop, actors: s.actors,
     events: s.events.map((e) => ({ name: e.name, t: e.t, phase: +(e.t / s.duration).toFixed(4), actor: e.actor })),
-    meta: s.meta, playback: s.playback,
+    meta: s.meta, playback: s.playback, origins: Object.keys(s.origins).length ? s.origins : undefined,
   }])),
 };
 if (!only) {

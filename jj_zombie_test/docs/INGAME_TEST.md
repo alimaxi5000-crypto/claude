@@ -25,7 +25,7 @@ aus dem Chat und der Server-Konsole.
 | 5 | `/zspawn 1 schlurfer` im Freien | Zombie erscheint 8–14 m vor dir auf dem Boden (nicht im Wasser, nicht in Wänden), schlurfend, rechtes Bein schleift. Chat: `1 Zombie(s) gespawnt (1x schlurfer)` | |
 | 6 | `/zspawn 1 laeufer` | Läufer brüllt kurz (Arme und Kopf hoch), sprintet mit Klauen nach vorn, wird nach ~5 s müde (geht), sprintet dann wieder | |
 | 7 | Weglaufen, im Kreis laufen, hinter ein Hindernis | Zombies verfolgen dich, umgehen Hindernisse. Bleibt einer hängen, weicht er nach ~2,5 s seitlich aus | |
-| 8 | Stehen bleiben, Zombie kommt auf ~1 m | Ausfallschritt mit Greifen, bei ~1 m: **Packen**. Der Zombie springt dich an, schlägt die Hände auf deine Schultern, reißt dich herum (auch von hinten/seitlich), Kamera geht nah ran, Herzschlag | |
+| 8 | Stehen bleiben, Zombie kommt auf ~1 m | Ausfallschritt mit Greifen, bei ~1 m: **Packen**. Der Zombie springt dich **aus seiner Richtung und mit Blick zu dir** an (kein Drehen, nicht in dir drin), schlägt die Hände auf deine Schultern, reißt dich herum (auch von hinten/seitlich), Kamera geht nah ran, Herzschlag. Je einmal von vorn, von der Seite und von hinten packen lassen | |
 | 9 | Ringen: **E schnell drücken** (≈ 8–10/s) | Balken steigt; bei > 70 % stemmst du ihn weg (Arme durchgestreckt), darunter Hin-und-Her, unter 35 % drückt er zu dir rein. Nach ~3 s (Schlurfer) bzw. ~5 s (Läufer, packt stärker): **Wegstoßen**. Zombie fliegt zurück (Ragdoll), kurze Zeitlupe, "LOSGERISSEN!" | |
 | 10 | Nach dem Stoß | Du bist sofort wieder frei. Der Zombie liegt ~3,5 s, steht mit eigener Aufsteh-Animation auf und kommt wieder | |
 | 11 | Schonfrist | Für 4 s nach dem Finisher kann dich kein Zombie packen | |

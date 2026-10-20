@@ -190,7 +190,7 @@ Screenshots machen und mit dem Kontaktbogen vergleichen (siehe INGAME_TEST.md).
 
 ## 7. Paar-Szenen und Ausrichtung
 
-- Paar-Szenen (`fin_*`) haben einen gemeinsamen Szenenursprung (Opfer bei 0, Blick +Y). Kontakte
+- Paar-Szenen (`fin_*`) werden in einem gemeinsamen Szenen-Rahmen gebaut (Opfer bei 0, Blick +Y). Kontakte
   werden gegen die **gelöste** Pose des anderen Akteurs gerechnet (`ctx.at`, drei Durchgänge pro
   Frame). Deshalb passen Griffe für männliche und weibliche Opfer automatisch.
 - Feinjustierung pro Akteur: `anims-src/align.json`
@@ -204,7 +204,7 @@ Screenshots machen und mit dem Kontaktbogen vergleichen (siehe INGAME_TEST.md).
 
 - Spuren: 0 Knochen-Translation, 1 Knochen-Rotation, 5 Mover-Translation, 6 Mover-Rotation. BoneIds nach `boneId | (track << 16)` sortiert.
 - Rotationen sind lokale Rotationen relativ zum Elternknochen, mit Vorzeichen-Kontinuität. Statische Spuren haben w ≥ 0.
-- Paar-Szenen (mehr als ein Akteur): Die Mover-Drehung wird in die `SKEL_ROOT`-Rotation/-Position eingebacken, die Mover-Spur trägt nur die Position. Grund: Im Spiel wurde die Mover-Drehung in vernetzten Synced Scenes nicht wie erwartet angewendet (Zombie stand 180° verdreht). Abschaltbar pro Quelle mit `bakeMoverRotation: false`.
+- Paar-Szenen (mehr als ein Akteur): Jeder Clip beginnt bei der Identität. Die Bewegung relativ zum Mover in Bild 0 wird in `SKEL_ROOT` eingebacken (`root' = M(0)⁻¹ · M(t) · root(t)`), die Mover-Spuren sind konstant Identität. Der Mover in Bild 0 (Position + Gierwinkel im Szenen-Rahmen) steht als `origins[akteur] = { x, y, z, yaw }` im Register (`shared/clips_data.lua`), der Client startet den Akteur dort in einer eigenen Szene. Grund (Spieltests 1 und 2): GTA setzt einen Ped auf den Ursprung seiner Szene und ignoriert den Startversatz im Clip. Die Weltposen bleiben gleich: `S · M(t) · root(t) = (S · M(0)) · (M(0)⁻¹ · M(t) · root(t))`. Der Build prüft das an den dekodierten `.ycd`-Daten (Abweichung > 2 mm = Fehler) und dass Loops und ihre Nachfolger dieselben Startpunkte haben. Pro Quelle abschaltbar mit `rebaseMover: false`.
 - Animations-Flag 16 = Wurzelbewegung vorhanden. `SequenceFrameLimit = Frames + 30`.
 - Clip-/Dict-Namen klein, Hash `joaat` (kleingeschrieben). 30 fps.
 

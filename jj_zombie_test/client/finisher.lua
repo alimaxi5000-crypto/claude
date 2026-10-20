@@ -22,31 +22,74 @@ end
 local function nui(msg) SendNUIMessage(msg) end
 
 -- ------------------------------------------------------------------ scene control
--- Starts one networked synced scene for both actors in the fixed scene frame of this finisher.
+-- Paired clips start at identity: GTA places a synced-scene ped at its scene origin and ignores
+-- the clip's start offset. The registry therefore gives every actor its own origin in the scene
+-- frame (victim at 0,0 facing +Y, zombie in front of him), and every actor plays in its own
+-- networked synced scene at sceneFrame * origin. Both scenes are created and started in the same
+-- frame, so they run on the same clock.
+local ZERO = { x = 0.0, y = 0.0, z = 0.0, yaw = 0.0 }
+
+local function originOf(e, actor)
+    return e and e.origins and e.origins[actor] or ZERO
+end
+
+local function actorStart(fin, e, actor)
+    local o = originOf(e, actor)
+    return ZCam.sceneToWorld(fin.origin, fin.heading, o.x, o.y, o.z), (fin.heading + o.yaw) % 360.0
+end
+
+local function sameOrigin(a, b)
+    return math.abs(a.x - b.x) < 0.001 and math.abs(a.y - b.y) < 0.001 and math.abs(a.z - b.z) < 0.001
+        and math.abs(U.angleDiff(a.yaw, b.yaw)) < 0.05
+end
+
+-- Starts the next clip of both actors. An actor that keeps its origin (clinch -> clinch, clinch ->
+-- result) blends into the new clip. An actor whose origin changes (grab -> clinch) switches in one
+-- frame: its entity moves to the new origin and the pose continues unchanged, because the clips
+-- meet in exactly the same world pose (verified by the build). A blend across two different
+-- entity frames would swing the body through the difference.
 local function playScene(fin, key, opts)
     local e = entryOf(key)
     if not e then return false end
     local ok = Anim.load(e.dict, 2000)
     if not ok then return false end
     opts = opts or {}
-    local o, h = fin.origin, fin.heading
-    local scene = NetworkCreateSynchronisedScene(o.x, o.y, o.z, 0.0, 0.0, h, 2, opts.hold == true, opts.loop == true, 1.0, 0.0, 1.0)
-    NetworkAddPedToSynchronisedScene(fin.victim, scene, e.dict, e.actors.victim, opts.blendIn or 8.0, -4.0, VICTIM_FLAGS, 0, opts.moverBlend or 1000.0, 0)
-    if DoesEntityExist(fin.zombie) then
-        NetworkAddPedToSynchronisedScene(fin.zombie, scene, e.dict, e.actors.zombie, opts.zBlendIn or opts.blendIn or 8.0, -4.0, ZOMBIE_FLAGS, 0, opts.zMoverBlend or opts.moverBlend or 1000.0, 0)
+    local prev = fin.sceneEntry
+    local scenes = {}
+    local function add(ped, actor, flags, blendIn, moverBlend)
+        if prev and not sameOrigin(originOf(prev, actor), originOf(e, actor)) then blendIn, moverBlend = 1000.0, 1000.0 end
+        local p, h = actorStart(fin, e, actor)
+        local scene = NetworkCreateSynchronisedScene(p.x, p.y, p.z, 0.0, 0.0, h, 2, opts.hold == true, opts.loop == true, 1.0, 0.0, 1.0)
+        NetworkAddPedToSynchronisedScene(ped, scene, e.dict, e.actors[actor], blendIn, -4.0, flags, 0, moverBlend, 0)
+        scenes[actor] = scene
     end
-    NetworkStartSynchronisedScene(scene)
-    fin.scene, fin.sceneKey, fin.sceneEntry, fin.sceneStart, fin.sceneLoop = scene, key, e, GetGameTimer(), opts.loop == true
+    add(fin.victim, 'victim', VICTIM_FLAGS, opts.blendIn or 8.0, opts.moverBlend or 1000.0)
+    if DoesEntityExist(fin.zombie) then
+        add(fin.zombie, 'zombie', ZOMBIE_FLAGS, opts.zBlendIn or opts.blendIn or 8.0, opts.zMoverBlend or opts.moverBlend or 1000.0)
+    end
+    for _, scene in pairs(scenes) do NetworkStartSynchronisedScene(scene) end
+    local old = fin.scenes
+    fin.scenes, fin.sceneKey, fin.sceneEntry, fin.sceneStart, fin.sceneLoop = scenes, key, e, GetGameTimer(), opts.loop == true
     fin.firedEvents = {}
     fin.lastPhase = 0.0
+    -- The peds moved into the new scenes; the previous ones are stopped a moment later (stopping
+    -- them in the same frame could release a ped before its new scene took over).
+    if old then
+        CreateThread(function()
+            Wait(250)
+            for _, scene in pairs(old) do NetworkStopSynchronisedScene(scene) end
+        end)
+    end
     Anim.release(e.dict)
     return true
 end
 
--- Phase 0..1 of the running scene (time-based until the local scene id is available).
+-- Phase 0..1 of the running clip, read from the victim's scene (time-based until the local
+-- scene id is available).
 local function scenePhase(fin)
-    if not fin.scene then return 1.0 end
-    local loc = NetworkGetLocalSceneFromNetworkId(fin.scene)
+    local scene = fin.scenes and fin.scenes.victim
+    if not scene then return 1.0 end
+    local loc = NetworkGetLocalSceneFromNetworkId(scene)
     if loc and loc ~= -1 and IsSynchronizedSceneRunning(loc) then
         return GetSynchronizedScenePhase(loc)
     end
@@ -121,7 +164,7 @@ local function release(fin, why)
     if not fin or fin.released then return end
     fin.released = true
     if ZFin.active == fin then ZFin.active = nil end
-    if fin.scene then NetworkStopSynchronisedScene(fin.scene) end
+    for _, scene in pairs(fin.scenes or {}) do NetworkStopSynchronisedScene(scene) end
     ZCam.stop(why == 'abort' and 300 or 700)
     ZSound.loop('heartbeat', false)
     ZSound.loop('breath', false)
@@ -130,9 +173,24 @@ local function release(fin, why)
     IntegrationC.setGameplayLocked(false)
     SetTimeScale(1.0)
     local ped = PlayerPedId()
-    if why == 'abort' and not IsEntityDead(ped) then ClearPedTasks(ped) end
+    if why == 'abort' and not IsEntityDead(ped) then
+        -- Mid-grab the body can be turned away from the entity (the victim is yanked round), so
+        -- the entity takes the body's facing before the pose returns to normal.
+        local h = ZFin.bodyHeading(ped)
+        ClearPedTasks(ped)
+        if h then SetEntityHeading(ped, h) end
+    end
 end
 ZFin.release = release
+
+-- Facing of a ped's body from its shoulders and hips (forward = up x right).
+function ZFin.bodyHeading(ped)
+    local lc, rc = GetPedBoneCoords(ped, 64729, 0.0, 0.0, 0.0), GetPedBoneCoords(ped, 10706, 0.0, 0.0, 0.0) -- clavicles
+    local lt, rt = GetPedBoneCoords(ped, 58271, 0.0, 0.0, 0.0), GetPedBoneCoords(ped, 51826, 0.0, 0.0, 0.0) -- thighs
+    local rx, ry = (rc.x - lc.x) + (rt.x - lt.x), (rc.y - lc.y) + (rt.y - lt.y)
+    if rx * rx + ry * ry < 1e-4 then return nil end
+    return U.headingOf(-ry, rx)
+end
 
 -- ------------------------------------------------------------------ victim flow
 local function chooseIntensity(fin)
@@ -166,9 +224,11 @@ local function runVictim(data)
         return
     end
     local zombie = NetworkGetEntityFromNetworkId(data.zombieNet)
-    -- Scene frame: origin at the victim, +Y towards the zombie. The victim's current heading
-    -- and the chosen 45-degree variant are reconciled half/half so neither body snaps more
-    -- than ~11 degrees; the mover blend then removes the rest smoothly.
+    -- Scene frame: origin at the victim, +Y towards the zombie. The grab variant (45-degree steps)
+    -- starts the victim at his own position and the zombie 1 m in front of him, facing him. The
+    -- victim's real heading and the zombie's real direction are reconciled half/half, so neither
+    -- start transform differs by more than ~11 degrees from where the body really is; the mover
+    -- blend (~0.25 s, before the hands land) glides both entities there.
     local vp, zp = GetEntityCoords(me), GetEntityCoords(zombie)
     local approach = U.headingOf(zp.x - vp.x, zp.y - vp.y)
     local fromVictim = (GetEntityHeading(me) - data.dir * 45.0) % 360.0
@@ -185,7 +245,7 @@ local function runVictim(data)
     SetCurrentPedWeapon(me, `WEAPON_UNARMED`, true)
     IntegrationC.setGameplayLocked(true)
     CreateThread(function() controlsLoop(fin) end)
-    if not playScene(fin, data.grab, { blendIn = 6.0, moverBlend = 8.0, zMoverBlend = 5.0 }) then
+    if not playScene(fin, data.grab, { blendIn = 6.0, moverBlend = 4.0, hold = true }) then
         TriggerServerEvent(Events.FinisherClientState, fin.id, 'failed')
         return release(fin, 'abort')
     end
@@ -210,7 +270,8 @@ local function runVictim(data)
         if IsEntityDead(me) then return release(fin, 'abort') end
         if now - fin.lastServerMsg > 5000 and fin.phase == 'struggle' then return release(fin, 'abort') end
 
-        if fin.phase == 'grab' and phase >= 0.995 then
+        -- The grab holds its last frame until the clinch takes over (same world pose, no gap).
+        if fin.phase == 'grab' and phase >= 0.999 then
             fin.phase = 'struggle'
             fin.struggleStartLocal = now
             fin.intensity = chooseIntensity(fin)

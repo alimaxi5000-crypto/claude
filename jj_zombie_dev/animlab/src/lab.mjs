@@ -157,6 +157,13 @@ function evalActor(actor, t) {
   }
   const rootT = A.rootT ? (u > 0 ? vlerp(A.rootT, B.rootT, u) : A.rootT) : null;
   const mover = { p: vlerp(A.mover.p, B.mover.p, u), q: qslerp(A.mover.q, B.mover.q, u) };
+  // Exported paired clips start at identity: the game starts each actor at sceneFrame * origin.
+  const o = state.source === 'ycd' ? seg.scene.origins?.[actor] : null;
+  if (o) {
+    const oq = qaxis([0, 0, 1], o.yaw * DEG);
+    mover.p = vadd([o.x, o.y, o.z], qrot(oq, mover.p));
+    mover.q = qnorm(qmul(oq, mover.q));
+  }
   const al = state.align[actor];
   if (al) {
     mover.p = vadd(mover.p, [al.dx || 0, al.dy || 0, al.dz || 0]);

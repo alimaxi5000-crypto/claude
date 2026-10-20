@@ -24,6 +24,8 @@ steht, ist rechnerisch geprüft (Tests, Metriken, Rücklesen) oder im Browser-La
 - **Eigenes Aufstehen nach Ragdoll** (`Config.Effects.CustomGetup`) ist riskant (Übergang Ragdoll → Clip). Bei Problemen auf `false` stellen (GTA-eigenes Aufstehen).
 - **Größenvariation** der Zombies ist in GTA ohne Per-Frame-Tricks nicht möglich und wurde deshalb weggelassen.
 - **Netzwerkszenen mit fremdem Besitzer**: Getestet nur gegen die offizielle Doku (`SET_ENTITY_REMOTE_SYNCED_SCENES_ALLOWED`), nicht live mit zwei Spielern.
+- **Eine Szene pro Akteur** (seit 0.1.3): Opfer und Zombie laufen in zwei vernetzten Szenen, die im selben Frame starten. Gehört der Zombie einem anderen Spieler, hängt der Gleichlauf davon ab, dass GTA beide Szenen mit derselben Startzeit verteilt. Das ist live mit zwei Spielern noch nicht gesehen. Läuft der Zombie sichtbar nach (Hände kommen zu spät), bitte melden. Der nächste Schritt wäre dann, dass der Opfer-Client den Zombie für die Dauer des Finishers übernimmt (noch nicht gebaut).
+- **Entität während der Paar-Clips**: Die Entität jedes Akteurs bleibt auf seinem Startpunkt, die Bewegung steckt im Wurzelknochen. Die Kapsel des Zombies folgt dem Ausfallschritt also nicht (0,44 m). Bei einem Abbruch mitten im Grab gleitet sein Körper beim Ausblenden (0,25 s) zur Entität zurück.
 
 ## Integration (Annahmen, im Code mit `VERIFY:` markiert)
 

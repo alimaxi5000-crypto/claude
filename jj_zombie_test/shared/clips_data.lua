@@ -46,6 +46,20 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_bite',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'f',
         },
@@ -77,6 +91,20 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_bite',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'm',
         },
@@ -100,6 +128,20 @@ ClipData = {
                 yaw = 0,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd0_f',
         },
@@ -123,6 +165,20 @@ ClipData = {
                 yaw = 0,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd0_m',
         },
@@ -146,6 +202,20 @@ ClipData = {
                 yaw = 45,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 45,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd1_f',
         },
@@ -169,6 +239,20 @@ ClipData = {
                 yaw = 45,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 45,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd1_m',
         },
@@ -192,6 +276,20 @@ ClipData = {
                 yaw = 90,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 90,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd2_f',
         },
@@ -215,6 +313,20 @@ ClipData = {
                 yaw = 90,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 90,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd2_m',
         },
@@ -238,6 +350,20 @@ ClipData = {
                 yaw = 135,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 135,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd3_f',
         },
@@ -261,6 +387,20 @@ ClipData = {
                 yaw = 135,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 135,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd3_m',
         },
@@ -284,6 +424,20 @@ ClipData = {
                 yaw = 180,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 180,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd4_f',
         },
@@ -307,6 +461,20 @@ ClipData = {
                 yaw = 180,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 180,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd4_m',
         },
@@ -330,6 +498,20 @@ ClipData = {
                 yaw = -135,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -135,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd5_f',
         },
@@ -353,6 +535,20 @@ ClipData = {
                 yaw = -135,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -135,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd5_m',
         },
@@ -376,6 +572,20 @@ ClipData = {
                 yaw = -90,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -90,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd6_f',
         },
@@ -399,6 +609,20 @@ ClipData = {
                 yaw = -90,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -90,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd6_m',
         },
@@ -422,6 +646,20 @@ ClipData = {
                 yaw = -45,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -45,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd7_f',
         },
@@ -445,6 +683,20 @@ ClipData = {
                 yaw = -45,
             },
             name = 'fin_grab',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = -45,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 1,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'd7_m',
         },
@@ -460,6 +712,7 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_recover',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -2,
@@ -479,6 +732,7 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_recover',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -2,
@@ -509,6 +763,20 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_shove',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'f',
         },
@@ -535,6 +803,20 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_shove',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'm',
         },
@@ -556,6 +838,20 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_struggle_high',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'f',
         },
@@ -577,6 +873,20 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_struggle_high',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'm',
         },
@@ -603,6 +913,20 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_struggle_low',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'f',
         },
@@ -629,6 +953,20 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_struggle_low',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'm',
         },
@@ -650,6 +988,20 @@ ClipData = {
                 gender = 'f',
             },
             name = 'fin_struggle_mid',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'f',
         },
@@ -671,6 +1023,20 @@ ClipData = {
                 gender = 'm',
             },
             name = 'fin_struggle_mid',
+            origins = {
+                victim = {
+                    x = 0,
+                    y = 0,
+                    yaw = 0,
+                    z = 0,
+                },
+                zombie = {
+                    x = 0,
+                    y = 0.56,
+                    yaw = 180,
+                    z = 0,
+                },
+            },
             playback = {},
             variant = 'm',
         },
@@ -684,6 +1050,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'smoke_bob',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -701,6 +1068,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'smoke_face',
+            origins = nil,
             playback = {
                 blendIn = 2,
                 blendOut = -2,
@@ -718,6 +1086,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'smoke_nod',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -735,6 +1104,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'smoke_wave',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -757,6 +1127,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zmove_alert_roar',
+            origins = nil,
             playback = {
                 blendIn = 6,
                 blendOut = -3,
@@ -774,6 +1145,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zmove_runner_idle',
+            origins = nil,
             playback = {
                 blendIn = 3,
                 blendOut = -3,
@@ -791,6 +1163,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zmove_runner_run',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -808,6 +1181,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zmove_runner_walk',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -825,6 +1199,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zmove_shamble_idle',
+            origins = nil,
             playback = {
                 blendIn = 3,
                 blendOut = -3,
@@ -842,6 +1217,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zmove_shamble_walk',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -859,6 +1235,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_death_a',
+            origins = nil,
             playback = {
                 blendIn = 6,
                 blendOut = -1,
@@ -876,6 +1253,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_death_b',
+            origins = nil,
             playback = {
                 blendIn = 6,
                 blendOut = -1,
@@ -893,6 +1271,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_getup_back',
+            origins = nil,
             playback = {
                 blendIn = 2,
                 blendOut = -3,
@@ -910,6 +1289,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_getup_front',
+            origins = nil,
             playback = {
                 blendIn = 2,
                 blendOut = -3,
@@ -927,6 +1307,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_hit_back',
+            origins = nil,
             playback = {
                 blendIn = 8,
                 blendOut = -4,
@@ -944,6 +1325,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_hit_front',
+            origins = nil,
             playback = {
                 blendIn = 8,
                 blendOut = -4,
@@ -961,6 +1343,7 @@ ClipData = {
             loop = true,
             meta = {},
             name = 'zreact_reach',
+            origins = nil,
             playback = {
                 blendIn = 4,
                 blendOut = -4,
@@ -978,6 +1361,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_stagger_back',
+            origins = nil,
             playback = {
                 blendIn = 8,
                 blendOut = -3,
@@ -995,6 +1379,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_stagger_front',
+            origins = nil,
             playback = {
                 blendIn = 8,
                 blendOut = -3,
@@ -1017,6 +1402,7 @@ ClipData = {
             loop = false,
             meta = {},
             name = 'zreact_swipe',
+            origins = nil,
             playback = {
                 blendIn = 8,
                 blendOut = -4,

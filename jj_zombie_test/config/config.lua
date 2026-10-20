@@ -182,5 +182,7 @@ Config.Integration = {
 --  CLIP OVERRIDES
 --  Replace any registry entry without code changes. Key = registry name ('name' or 'name:variant').
 --  Example: Config.ClipOverrides['move_shamble'] = { dict = 'my_anims', clip = 'my_walk', playback = { flags = 1 } }
+--  Paired finisher clips start every actor at its own origin; for replacements of those also set
+--  origins = { victim = { x = 0.0, y = 0.0, z = 0.0, yaw = 0.0 }, zombie = { ... } } (scene frame, meters/degrees).
 -- ============================================================
 Config.ClipOverrides = {}

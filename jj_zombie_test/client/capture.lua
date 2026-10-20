@@ -43,17 +43,27 @@ function ZPreview.start()
     return true
 end
 
--- Play a registry scene locally. The zombie gets its own scene shifted by the alignment offset
--- so the effect of an offset can be judged live.
+-- Play a registry scene locally, like the finisher: every actor in its own scene at
+-- sceneFrame * origin (paired clips start at identity). The zombie's start is additionally shifted
+-- by the alignment offset (scene frame), so the effect of an offset can be judged live.
+local ZERO = { x = 0.0, y = 0.0, z = 0.0, yaw = 0.0 }
+local function actorStart(o, h, origin, off)
+    origin, off = origin or ZERO, off or ZERO
+    local base, bh = ZCam.sceneToWorld(o, h, off.x, off.y, off.z), h + off.yaw
+    return ZCam.sceneToWorld(base, bh, origin.x, origin.y, origin.z), (bh + origin.yaw) % 360.0
+end
+
 function ZPreview.play(entry, phase, rate, loop)
     if not ZPreview.active or not entry then return false end
     local ok = Anim.load(entry.dict, 3000)
     if not ok then return false end
     local me, z = PlayerPedId(), ZPreview.zombie
     local o, h, off = ZPreview.origin, ZPreview.heading, ZPreview.offset
-    local s1 = CreateSynchronizedScene(o.x, o.y, o.z, 0.0, 0.0, h, 2)
-    local zo = ZCam.sceneToWorld(o, h, off.x, off.y, off.z)
-    local s2 = CreateSynchronizedScene(zo.x, zo.y, zo.z, 0.0, 0.0, h + off.yaw, 2)
+    local origins = entry.origins or {}
+    local vp, vh = actorStart(o, h, origins.victim, nil)
+    local zp, zh = actorStart(o, h, origins.zombie, off)
+    local s1 = CreateSynchronizedScene(vp.x, vp.y, vp.z, 0.0, 0.0, vh, 2)
+    local s2 = CreateSynchronizedScene(zp.x, zp.y, zp.z, 0.0, 0.0, zh, 2)
     TaskSynchronizedScene(me, s1, entry.dict, entry.actors.victim, 1000.0, -8.0, 0, 0, 1000.0, 0)
     TaskSynchronizedScene(z, s2, entry.dict, entry.actors.zombie, 1000.0, -8.0, 0, 0, 1000.0, 0)
     for _, s in ipairs({ s1, s2 }) do

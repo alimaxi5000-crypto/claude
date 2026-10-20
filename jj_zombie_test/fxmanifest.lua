@@ -4,7 +4,7 @@ lua54 'yes'
 
 name 'jj_zombie_test'
 author 'JJ Scripts'
-version '0.1.0'
+version '0.1.3'
 description 'Zombie test system: server-owned zombies, owner-client AI and a paired finisher with custom animations'
 
 -- jj_lib / jj_core imports follow the server convention (JJ / Core globals). The resource also

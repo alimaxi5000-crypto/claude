@@ -53,7 +53,7 @@ export function writeLabData({ skeletons, scenes, exportClips, report, dicts, st
     generated: new Date().toISOString(),
     sequences: sequences.map((q) => ({ ...q, items: q.items.filter((i) => has(i.key)).map((i) => ({ repeat: 1, ...i })) })).filter((q) => q.items.length),
     skeletons: skel,
-    scenes: scenes.map((s) => ({ key: s.key, name: s.name, variant: s.variant, dict: s.dict, duration: s.duration, loop: s.loop, actors: s.actors, events: s.events, meta: s.meta, checks: s.checks || null, sceneMetrics: s.sceneMetrics || null })),
+    scenes: scenes.map((s) => ({ key: s.key, name: s.name, variant: s.variant, dict: s.dict, duration: s.duration, loop: s.loop, actors: s.actors, origins: s.origins || null, events: s.events, meta: s.meta, checks: s.checks || null, sceneMetrics: s.sceneMetrics || null })),
     clips, ycd,
     blends: report.blends, problems: report.problems,
   };
