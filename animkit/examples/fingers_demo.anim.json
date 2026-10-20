@@ -1,0 +1,136 @@
+{
+ "format": "jj-anim/1",
+ "name": "fingers_demo",
+ "title": "Finger-Vorlagen",
+ "type": "single",
+ "fps": 30,
+ "duration": 3,
+ "loop": true,
+ "actors": {
+  "a": {
+   "model": "mp_m_freemode_01",
+   "label": "Hände"
+  }
+ },
+ "tracks": {
+  "a": {
+   "mover": [
+    {
+     "t": 0,
+     "p": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 0
+    }
+   ],
+   "ik": {
+    "handL": [
+     {
+      "t": 0,
+      "target": [
+       -0.22,
+       0.32,
+       0.12
+      ]
+     }
+    ],
+    "handR": [
+     {
+      "t": 0,
+      "target": [
+       0.22,
+       0.32,
+       0.12
+      ]
+     }
+    ]
+   },
+   "fingers": {
+    "L": [
+     {
+      "t": 0,
+      "preset": "relaxed"
+     },
+     {
+      "t": 0.5,
+      "preset": "fist"
+     },
+     {
+      "t": 1,
+      "preset": "open",
+      "spread": 0.8
+     },
+     {
+      "t": 1.5,
+      "preset": "grab"
+     },
+     {
+      "t": 2,
+      "preset": "point"
+     },
+     {
+      "t": 2.5,
+      "preset": "claw"
+     }
+    ],
+    "R": [
+     {
+      "t": 0,
+      "preset": "claw",
+      "curl": 0.9
+     },
+     {
+      "t": 0.5,
+      "preset": "point",
+      "curl": 0.9
+     },
+     {
+      "t": 1,
+      "preset": "grab",
+      "curl": 0.9
+     },
+     {
+      "t": 1.5,
+      "preset": "open",
+      "curl": 0.9
+     },
+     {
+      "t": 2,
+      "preset": "fist",
+      "curl": 0.9
+     },
+     {
+      "t": 2.5,
+      "preset": "relaxed",
+      "curl": 0.9
+     }
+    ]
+   },
+   "bones": {
+    "SKEL_R_Finger11": [
+     {
+      "t": 0,
+      "rot": [
+       0,
+       0,
+       0
+      ]
+     },
+     {
+      "t": 1.5,
+      "rot": [
+       40,
+       0,
+       0
+      ]
+     }
+    ]
+   }
+  }
+ },
+ "contacts": [],
+ "events": [],
+ "notes": "Beispiel: alle Finger-Vorlagen nacheinander, dazu ein einzeln gedrehtes Fingerglied."
+}

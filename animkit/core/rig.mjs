@@ -6,6 +6,11 @@
 // position/direction, never in bone-local axes. The resulting clips are therefore independent
 // of the (unknown until imported) local axis conventions of the real GTA skeleton.
 //
+// Direct bone rotations (studio rotation rings): pose.bones = { SKEL_x: quat } is an extra
+// rotation in the bone's parent-posed rest model frame, applied after the rig controls
+// (D = Dparent * rigDelta * extra). Arm/leg IK specs take an optional weight 0..1 that blends the
+// IK chain with the FK chain (weight 1 = IK only, the extra rotations of the chain are ignored).
+//
 // Angle conventions for body controls ({ bend, side, twist } in radians):
 //   bend  > 0 : flex forward (head/torso tilt towards +Y)
 //   side  > 0 : lean to the character's right (+X)
@@ -137,6 +142,10 @@ export class Rig {
     let headCtl = pose.head || null;
 
     const solvedLimb = {}; // role -> model delta for IK bones
+    const extra = pose.bones || null;
+    const ex = (name) => (extra && extra[name]) || null;
+    // IK (absolute) vs FK (parent * rig delta * extra) blend for limb bones.
+    const blendIk = (fkD, ikD, w) => (w >= 1 ? ikD : w <= 0 ? fkD : qslerp(fkD, ikD, w));
 
     for (const i of s.order) {
       const b = s.bones[i];
@@ -145,6 +154,7 @@ export class Rig {
       let delta; // local delta in rest model frame
       if (i === this.rootI) {
         D[i] = bodyRot(pose.root);
+        if (ex(b.name)) D[i] = qnorm(qmul(D[i], ex(b.name)));
         const off = pose.root?.p || [0, 0, 0];
         P[i] = vadd(b.t, off);
         Q[i] = qnorm(qmul(D[i], s.restQ[i]));
@@ -187,52 +197,62 @@ export class Rig {
       } else if (role && role.startsWith('upper')) {
         const sd = role.slice(5);
         const spec = pose.arm?.[sd];
-        if (spec && spec.target) {
+        if (spec && spec.target && (spec.weight ?? 1) > 0) {
           this._solveArm(sd, spec, P, pD, mover, toBody, dirToBody, solvedLimb);
-          D[i] = solvedLimb['upper' + sd];
+          const w = solvedLimb['_w' + sd] = spec.weight ?? 1;
+          const fk = w < 1 ? this._fkD(pD, spec?.fk ? bodyRot(spec.fk.shoulder) : qid(), ex(b.name)) : null;
+          D[i] = blendIk(fk, solvedLimb['upper' + sd], w);
           Q[i] = qnorm(qmul(D[i], s.restQ[i]));
           continue;
         }
         delta = spec?.fk ? bodyRot(spec.fk.shoulder) : qid();
       } else if (role && role.startsWith('lower')) {
         const sd = role.slice(5);
+        const spec = pose.arm?.[sd];
+        const arm = this.side[sd].arm;
         if (solvedLimb['lower' + sd]) {
-          D[i] = solvedLimb['lower' + sd];
+          const w = solvedLimb['_w' + sd];
+          const fk = w < 1 ? this._fkD(pD, spec?.fk?.elbow ? qaxis(arm.hingeL, spec.fk.elbow) : qid(), ex(b.name)) : null;
+          D[i] = blendIk(fk, solvedLimb['lower' + sd], w);
           Q[i] = qnorm(qmul(D[i], s.restQ[i]));
           continue;
         }
-        const spec = pose.arm?.[sd];
-        const arm = this.side[sd].arm;
         delta = spec?.fk?.elbow ? qaxis(arm.hingeL, spec.fk.elbow) : qid();
       } else if (role && role.startsWith('hand')) {
         const sd = role.slice(4);
         D[i] = this._handDelta(sd, pose.arm?.[sd], pD, mover);
+        if (ex(b.name)) D[i] = qnorm(qmul(D[i], ex(b.name)));
         Q[i] = qnorm(qmul(D[i], s.restQ[i]));
         continue;
       } else if (role && role.startsWith('thigh')) {
         const sd = role.slice(5);
         const spec = pose.leg?.[sd];
-        if (spec && spec.target) {
+        if (spec && spec.target && (spec.weight ?? 1) > 0) {
           this._solveLeg(sd, spec, P, pD, mover, toBody, solvedLimb);
-          D[i] = solvedLimb['thigh' + sd];
+          const w = solvedLimb['_lw' + sd] = spec.weight ?? 1;
+          const fk = w < 1 ? this._fkD(pD, spec?.fk ? bodyRot(spec.fk.hip) : qid(), ex(b.name)) : null;
+          D[i] = blendIk(fk, solvedLimb['thigh' + sd], w);
           Q[i] = qnorm(qmul(D[i], s.restQ[i]));
           continue;
         }
         delta = spec?.fk ? bodyRot(spec.fk.hip) : qid();
       } else if (role && role.startsWith('calf')) {
         const sd = role.slice(4);
+        const spec = pose.leg?.[sd];
         if (solvedLimb['calf' + sd]) {
-          D[i] = solvedLimb['calf' + sd];
+          const w = solvedLimb['_lw' + sd];
+          const fk = w < 1 ? this._fkD(pD, spec?.fk?.knee ? qaxis(this.side[sd].leg.hingeL, spec.fk.knee) : qid(), ex(b.name)) : null;
+          D[i] = blendIk(fk, solvedLimb['calf' + sd], w);
           Q[i] = qnorm(qmul(D[i], s.restQ[i]));
           continue;
         }
-        const spec = pose.leg?.[sd];
         delta = spec?.fk?.knee ? qaxis(this.side[sd].leg.hingeL, spec.fk.knee) : qid();
       } else if (role && role.startsWith('foot')) {
         const sd = role.slice(4);
         const spec = pose.leg?.[sd];
-        if (spec && (spec.target || spec.foot)) {
-          D[i] = this._footDelta(sd, spec, pD, mover);
+        if (spec && (spec.target || spec.foot) && (spec.weight ?? 1) > 0) {
+          const w = spec.weight ?? 1;
+          D[i] = blendIk(w < 1 ? this._fkD(pD, qid(), ex(b.name)) : null, this._footDelta(sd, spec, pD, mover), w);
           Q[i] = qnorm(qmul(D[i], s.restQ[i]));
           continue;
         }
@@ -247,12 +267,18 @@ export class Rig {
       } else {
         delta = qid();
       }
-      D[i] = qnorm(qmul(pD, delta));
+      const e = ex(b.name);
+      D[i] = qnorm(qmul(pD, e ? qmul(delta, e) : delta));
       Q[i] = qnorm(qmul(D[i], s.restQ[i]));
     }
 
     const local = localsFromModel(s, Q);
     return { mover, rootT: P[this.rootI].slice(), P, Q, D, local, fades: this.fades };
+  }
+
+  // FK model delta of a bone: parent * rig delta * extra rotation.
+  _fkD(pD, delta, extra) {
+    return qnorm(qmul(pD, extra ? qmul(delta, extra) : delta));
   }
 
   _footFwdRest(sd) {

@@ -1,0 +1,531 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jj-scripts.local/schema/jj-anim-1.schema.json",
+  "title": "jj-anim/1 clip document",
+  "description": "One animation (single actor or pair) as keyframes. Written by the in-game studio (jj_animstudio) and by hand/code; converted by animkit into a GTA V .ycd. See jj_animstudio/docs/FORMAT.md.",
+  "type": "object",
+  "required": [
+    "format",
+    "name",
+    "type",
+    "duration",
+    "actors",
+    "tracks"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "jj-anim/1"
+    },
+    "name": {
+      "$ref": "#/$defs/name"
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "type": {
+      "enum": [
+        "single",
+        "pair"
+      ]
+    },
+    "dict": {
+      "$ref": "#/$defs/name"
+    },
+    "fps": {
+      "const": 30
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 30
+    },
+    "loop": {
+      "type": "boolean"
+    },
+    "loopMover": {
+      "enum": [
+        "closed",
+        "travel"
+      ]
+    },
+    "notes": {
+      "type": "string",
+      "maxLength": 4000
+    },
+    "targetResource": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_\\-]{0,64}$"
+    },
+    "actors": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 2,
+      "propertyNames": {
+        "$ref": "#/$defs/actorId"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/actor"
+      }
+    },
+    "tracks": {
+      "type": "object",
+      "maxProperties": 2,
+      "propertyNames": {
+        "$ref": "#/$defs/actorId"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/actorTracks"
+      }
+    },
+    "contacts": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "#/$defs/contact"
+      }
+    },
+    "events": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "limits": {
+      "type": "object",
+      "maxProperties": 32,
+      "additionalProperties": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 100000
+      }
+    },
+    "editor": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]{1,40}$"
+    },
+    "actorId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,15}$"
+    },
+    "num": {
+      "type": "number",
+      "minimum": -1000,
+      "maximum": 1000
+    },
+    "vec3": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/num"
+      }
+    },
+    "time": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 30
+    },
+    "ease": {
+      "enum": [
+        "smooth",
+        "fastIn",
+        "fastOut",
+        "linear",
+        "spring",
+        "step"
+      ]
+    },
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,40}$"
+        },
+        "skeleton": {
+          "enum": [
+            "male",
+            "female",
+            "zombie"
+          ]
+        },
+        "label": {
+          "type": "string",
+          "maxLength": 32
+        }
+      }
+    },
+    "moverKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "p": {
+          "$ref": "#/$defs/vec3"
+        },
+        "yaw": {
+          "$ref": "#/$defs/num"
+        }
+      }
+    },
+    "rootKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "p": {
+          "$ref": "#/$defs/vec3"
+        },
+        "rot": {
+          "$ref": "#/$defs/vec3"
+        }
+      }
+    },
+    "boneKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t",
+        "rot"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "rot": {
+          "$ref": "#/$defs/vec3"
+        }
+      }
+    },
+    "ikKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t",
+        "target"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "target": {
+          "$ref": "#/$defs/vec3"
+        },
+        "space": {
+          "enum": [
+            "body",
+            "scene"
+          ]
+        },
+        "pole": {
+          "$ref": "#/$defs/vec3"
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        },
+        "yaw": {
+          "$ref": "#/$defs/num"
+        },
+        "pitch": {
+          "$ref": "#/$defs/num"
+        },
+        "roll": {
+          "$ref": "#/$defs/num"
+        }
+      }
+    },
+    "fingerKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "preset": {
+          "enum": [
+            "relaxed",
+            "fist",
+            "open",
+            "grab",
+            "point",
+            "claw"
+          ]
+        },
+        "curl": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1.5
+        },
+        "spread": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        }
+      }
+    },
+    "lookKey": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "t",
+        "target"
+      ],
+      "properties": {
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "ease": {
+          "$ref": "#/$defs/ease"
+        },
+        "target": {
+          "$ref": "#/$defs/vec3"
+        },
+        "space": {
+          "enum": [
+            "body",
+            "scene"
+          ]
+        },
+        "weight": {
+          "$ref": "#/$defs/weight"
+        }
+      }
+    },
+    "range": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "items": {
+        "$ref": "#/$defs/time"
+      }
+    },
+    "actorTracks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mover": {
+          "type": "array",
+          "maxItems": 600,
+          "items": {
+            "$ref": "#/$defs/moverKey"
+          }
+        },
+        "root": {
+          "type": "array",
+          "maxItems": 600,
+          "items": {
+            "$ref": "#/$defs/rootKey"
+          }
+        },
+        "bones": {
+          "type": "object",
+          "maxProperties": 80,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^SKEL_[A-Za-z0-9_]{1,30}$"
+          },
+          "additionalProperties": {
+            "type": "array",
+            "maxItems": 600,
+            "items": {
+              "$ref": "#/$defs/boneKey"
+            }
+          }
+        },
+        "ik": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "handL": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/ikKey"
+              }
+            },
+            "handR": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/ikKey"
+              }
+            },
+            "footL": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/ikKey"
+              }
+            },
+            "footR": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/ikKey"
+              }
+            }
+          }
+        },
+        "fingers": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "L": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/fingerKey"
+              }
+            },
+            "R": {
+              "type": "array",
+              "maxItems": 600,
+              "items": {
+                "$ref": "#/$defs/fingerKey"
+              }
+            }
+          }
+        },
+        "look": {
+          "type": "array",
+          "maxItems": 600,
+          "items": {
+            "$ref": "#/$defs/lookKey"
+          }
+        },
+        "feet": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "lock": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "L": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "$ref": "#/$defs/range"
+                  }
+                },
+                "R": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "$ref": "#/$defs/range"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "endpoint": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,15}\\.(handL|handR|footL|footR|head|pelvis|SKEL_[A-Za-z0-9_]{1,30})$"
+    },
+    "contact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "to",
+        "t"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,24}$"
+        },
+        "from": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "to": {
+          "$ref": "#/$defs/endpoint"
+        },
+        "offset": {
+          "$ref": "#/$defs/vec3"
+        },
+        "t": {
+          "$ref": "#/$defs/range"
+        },
+        "stick": {
+          "type": "boolean"
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.5
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "t"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]{1,24}$"
+        },
+        "t": {
+          "$ref": "#/$defs/time"
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 30
+        }
+      }
+    }
+  }
+}

@@ -17,16 +17,8 @@ export const ANIMKIT = path.resolve(HERE, '..');
 export const VENDOR = path.join(ANIMKIT, 'vendor');
 export const REF_XML = path.join(VENDOR, 'sollumz', 'BoneProperties.xml');
 export const REAL_DIR = path.join(ANIMKIT, 'skeletons', 'real');
-export const SKELETON_KEYS = ['male', 'female', 'zombie'];
-
-// Ped model -> skeleton key. Any other humanoid model uses the male skeleton (GTA plays the same
-// clips on all humanoid peds; only bone lengths differ) and the report says so.
-export const MODEL_KEYS = { mp_m_freemode_01: 'male', mp_f_freemode_01: 'female', u_m_y_zombie_01: 'zombie' };
-export function skeletonKeyFor(nameOrModel) {
-  if (SKELETON_KEYS.includes(nameOrModel)) return { key: nameOrModel, exact: true };
-  const k = MODEL_KEYS[String(nameOrModel || '').toLowerCase()];
-  return k ? { key: k, exact: true } : { key: 'male', exact: false };
-}
+export { SKELETON_KEYS, MODEL_KEYS, skeletonKeyFor } from './models.mjs';
+import { SKELETON_KEYS } from './models.mjs';
 
 export function referenceSkeletonJson(refXml = REF_XML) {
   if (!fs.existsSync(refXml)) return null;

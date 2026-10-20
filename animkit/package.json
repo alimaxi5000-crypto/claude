@@ -5,7 +5,7 @@
   "description": "Animation toolkit: jj-anim/1 clip documents -> solved frames -> checked, read-back verified GTA V .ycd files.",
   "type": "module",
   "license": "UNLICENSED",
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=20.10" },
   "bin": { "animkit": "cli/animkit.mjs" },
   "scripts": {
     "doctor": "node cli/animkit.mjs doctor",

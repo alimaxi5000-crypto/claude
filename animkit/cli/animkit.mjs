@@ -5,7 +5,7 @@ import path from 'node:path';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const COMMANDS = {
-  build: 'build <file.anim.json> [--out dir] [--dict name] [--stream dir]   convert one clip document (same checks as the studio)',
+  build: 'build <file.anim.json> [--out dir] [--dict name] [--no-ycd]   convert one clip document (same checks as the studio)',
   watch: 'watch [--studio <jj_animstudio dir>] [--stream <jj_animstudio_stream dir>] [--once]   job converter for the in-game studio',
   doctor: 'doctor [--studio dir] [--stream dir]   check Node, .NET, ycdtool, skeletons, folders and write permissions',
   'import-skeleton': 'import-skeleton <male|female|zombie> <model.yft.xml> [--dir dir]   import a real ped skeleton (stays local)',

@@ -8,3 +8,4 @@ converter/ycdtool/obj/
 skeletons/real/
 # test output
 build/
+animkit.config.json
