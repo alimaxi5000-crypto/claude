@@ -27,3 +27,12 @@ Das Skript:
 ## Hinweis
 
 UEMCP unterstützt laut Projektbeschreibung UE 5.0 – 5.6 (teils 5.7). Bei neueren Versionen erst das README des Projekts prüfen.
+
+## FiveM-Animationssystem (JJ Scripts)
+
+| Ordner | Inhalt |
+|---|---|
+| `animkit/` | Animations-Werkzeug (Node + .NET): Clip-Dokument `jj-anim/1` → geprüfte, zurückgelesene `.ycd` |
+| `jj_animstudio/` | FiveM-Resource: Animations-Studio im Spiel (siehe `jj_animstudio/README.md`) |
+| `jj_zombie_dev/`, `jj_zombie_test/` | Zombie-Testsystem mit eigenen Animationen (nutzt `animkit`) |
+| `docs/ANIM_SYSTEM_PLAN.md` | Gesamtplan des Animationssystems |

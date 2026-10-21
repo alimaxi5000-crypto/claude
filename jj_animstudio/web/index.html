@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jj_animstudio</title>
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<div id="app" class="hidden">
+  <header id="top">
+    <div class="brand" data-t="app_title"></div>
+    <button id="btn-projects" class="btn" data-t="projects" data-tip="projects"></button>
+    <div id="project-info"><span id="project-name"></span><span id="save-state"></span></div>
+    <div class="spacer"></div>
+    <button id="btn-undo" class="btn icon" data-tip="tip_undo">↶</button>
+    <button id="btn-redo" class="btn icon" data-tip="tip_redo">↷</button>
+    <button id="btn-save" class="btn" data-t="save" data-tip="tip_save"></button>
+    <div class="group cams">
+      <button class="btn small" data-cam="front" data-t="cam_front" data-tip="tip_cam_front"></button>
+      <button class="btn small" data-cam="side" data-t="cam_side" data-tip="tip_cam_side"></button>
+      <button class="btn small" data-cam="top" data-t="cam_top" data-tip="tip_cam_top"></button>
+      <button class="btn small" data-cam="shoulder" data-t="cam_shoulder" data-tip="tip_cam_shoulder"></button>
+      <button class="btn small" data-cam="focus" data-t="cam_focus" data-tip="tip_cam_focus"></button>
+    </div>
+    <button id="btn-test" class="btn accent" data-t="test" data-tip="tip_test"></button>
+    <button id="btn-finish" class="btn" data-t="finish" data-tip="tip_finish"></button>
+    <button id="btn-help" class="btn icon" data-tip="tip_help">?</button>
+    <button id="btn-close" class="btn icon danger" data-tip="close">✕</button>
+  </header>
+
+  <aside id="left" class="panel">
+    <div id="actor-tabs"></div>
+    <div id="partner-row" class="row hidden"><label data-t="partner_model"></label><select id="partner-model"></select></div>
+    <h3 data-t="bones"></h3>
+    <label class="check"><input type="checkbox" id="chk-fingers"><span data-t="single_joints" data-tip="tip_single_joints"></span></label>
+    <div id="bone-tree"></div>
+  </aside>
+
+  <main id="view">
+    <div id="labels"></div>
+    <div id="warn" class="hidden"></div>
+  </main>
+
+  <aside id="right" class="panel">
+    <section id="sec-test" class="hidden"><h3 data-t="test_title"></h3><div id="test"></div></section>
+    <section id="sec-selected"><h3 data-t="selected"></h3><div id="inspector"></div></section>
+    <section id="sec-checks"><h3><span data-t="checks"></span> <span id="light" class="light"></span></h3><div id="checks"></div></section>
+    <section id="sec-fingers"><h3 data-t="fingers"></h3><div id="fingers"></div></section>
+    <section id="sec-helpers"><h3 data-t="helpers"></h3><div id="helpers"></div></section>
+    <section id="sec-poses"><h3 data-t="pose_library"></h3><div id="poses"></div></section>
+  </aside>
+
+  <footer id="bottom" class="panel">
+    <div id="transport">
+      <button id="btn-play" class="btn" data-tip="tip_play">▶</button>
+      <label class="check" data-tip="tip_loop"><input type="checkbox" id="chk-loop"><span data-t="loop"></span></label>
+      <label class="slider" data-tip="tip_speed"><span data-t="speed"></span><input type="range" id="speed" min="0.1" max="2" step="0.1" value="1"><output id="speed-out">1.0×</output></label>
+      <label class="check" data-tip="tip_onion"><input type="checkbox" id="chk-onion"><span data-t="onion"></span></label>
+      <span id="time-out"></span>
+      <label class="num"><span data-t="duration"></span><input type="number" id="duration" min="0.2" max="30" step="0.1"></label>
+      <div class="group" id="eases">
+        <button class="btn small" data-ease="smooth" data-t="ease_smooth" data-tip="tip_ease_smooth"></button>
+        <button class="btn small" data-ease="fastIn" data-t="ease_fastIn" data-tip="tip_ease_fastIn"></button>
+        <button class="btn small" data-ease="fastOut" data-t="ease_fastOut" data-tip="tip_ease_fastOut"></button>
+        <button class="btn small" data-ease="linear" data-t="ease_linear" data-tip="tip_ease_linear"></button>
+        <button class="btn small" data-ease="spring" data-t="ease_spring" data-tip="tip_ease_spring"></button>
+      </div>
+      <button id="btn-key-del" class="btn small" data-t="key_delete"></button>
+      <button id="btn-event" class="btn small" data-t="add_event" data-tip="tip_add_event"></button>
+      <label class="check"><input type="checkbox" id="chk-allrows"><span data-t="all_rows"></span></label>
+      <span id="range-out"></span>
+    </div>
+    <div id="timeline-wrap"><canvas id="timeline"></canvas></div>
+  </footer>
+
+  <div id="modal" class="hidden"><div class="dialog" id="dialog"></div></div>
+  <div id="tutorial" class="hidden"><div class="tut-box"><div id="tut-step"></div><p id="tut-text"></p><div class="row end"><button id="tut-skip" class="btn" data-t="tutorial_skip"></button><button id="tut-next" class="btn accent" data-t="tutorial_next"></button></div></div></div>
+  <div id="tooltip" class="hidden"></div>
+  <div id="toasts"></div>
+</div>
+<script src="studio.bundle.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "jj-zombie-animtools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Animation pipeline, lab and tests for jj_zombie_test (dev only, never shipped).",
+  "type": "module",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build-anims": "node build-anims.mjs",
+    "build-lab": "node build-lab.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "three": "0.169.0"
+  }
+}

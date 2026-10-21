@@ -1,0 +1,22 @@
+{
+  "name": "animkit",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Animation toolkit: jj-anim/1 clip documents -> solved frames -> checked, read-back verified GTA V .ycd files.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20.10" },
+  "bin": { "animkit": "cli/animkit.mjs" },
+  "scripts": {
+    "doctor": "node cli/animkit.mjs doctor",
+    "watch": "node cli/animkit.mjs watch",
+    "test": "bash tests/all.sh"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0",
+    "three": "0.169.0"
+  },
+  "optionalDependencies": {
+    "playwright": "1.64.1"
+  }
+}

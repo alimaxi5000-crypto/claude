@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- YCD converter for the animkit animation pipeline.
+       Depends on CodeWalker.Core (MIT), cloned by animkit/setup.sh into animkit/vendor/CodeWalker
+       at a pinned commit. Nothing from this tool or from CodeWalker ships with the resource. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../vendor/CodeWalker/CodeWalker.Core/CodeWalker.Core.csproj" />
+  </ItemGroup>
+</Project>

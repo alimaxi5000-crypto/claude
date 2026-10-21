@@ -1,0 +1,9 @@
+web/dev/
+data/projects/
+data/backups/
+data/poses/
+data/inbox/
+data/outbox/
+data/work/
+data/skeletons/
+tests/out/

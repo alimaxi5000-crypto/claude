@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jj_zombie Animations-Labor</title>
+<link rel="stylesheet" href="lab.css">
+</head>
+<body>
+<div id="app">
+  <aside id="left"></aside>
+  <main id="view">
+    <div id="hud"></div>
+    <div id="labels"></div>
+    <div id="problems" hidden></div>
+  </main>
+  <aside id="right">
+    <h2>Messungen</h2>
+    <div id="metrics"></div>
+    <h2>Ausrichtung</h2>
+    <div id="align"></div>
+  </aside>
+  <footer id="bar">
+    <div class="tools">
+      <button id="prev" title="Einzelbild zurück (←)">◀︎◀︎</button>
+      <button id="play" title="Abspielen/Pause (Leertaste)">▶</button>
+      <button id="next" title="Einzelbild vor (→)">▶︎▶︎</button>
+      <select id="speed" title="Geschwindigkeit">
+        <option value="0.1">0,1×</option><option value="0.25">0,25×</option><option value="0.5">0,5×</option>
+        <option value="1" selected>1×</option><option value="2">2×</option>
+      </select>
+      <span class="sep"></span>
+      <button data-toggle="capsules">Hüllen</button>
+      <button data-toggle="joints">Gelenke</button>
+      <button data-toggle="names">Bone-Namen</button>
+      <button data-toggle="trails">Wurzelspur</button>
+      <button data-toggle="axes">Ursprung</button>
+      <button data-toggle="follow">Mitführen</button>
+      <span class="sep"></span>
+      <button data-cam="front">Front</button>
+      <button data-cam="side">Seite</button>
+      <button data-cam="back">Rücken</button>
+      <button data-cam="shoulder">Schulter</button>
+      <button data-cam="top">Oben</button>
+      <button data-cam="close">Nah</button>
+      <button data-cam="wide">Totale</button>
+      <span class="sep"></span>
+      <button id="shot">Screenshot</button>
+      <button id="sheet">Kontaktbogen</button>
+    </div>
+    <canvas id="tl"></canvas>
+  </footer>
+</div>
+<script src="data/build.js" onerror="window.JJZ_BUILD=null"></script>
+<script src="lab.bundle.js"></script>
+</body>
+</html>
